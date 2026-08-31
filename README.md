@@ -34,10 +34,17 @@ Monogram je od verzie s Facebook odkazom aj priamo v hlavičke `index.html`.
   jemnejší/prémiovejší dojem
 - `variant-f-mono-red.png` — celé jednofarebné (červené), najlepšie na
   jednofarebnú tlač/vývesný štít z diaľky
+- `variant-g-medallion.png` / `variant-g-medallion-mono.png` — komplexnejšia
+  "medaila"/pečať: ryhovaný mincový okraj, "ZMENÁREŇ" a "OC LAUGARICIO ·
+  TRENČÍN" po obvode, dvojfarebný monogram v strede. Mono verzia (jedna
+  farba) je pre pečiatku/rytie/gravírovanie alebo tlač na tmavé pozadie.
 
 Odporúčanie: **variant D** (dvojfarebný) najviac spája vlastnú identitu s
-OC Laugaricio; **variant B** (navy/mosadz) je najuniverzálnejší, ak sa má
-logo používať aj mimo OC (vizitky, vlastný web, tlač).
+OC Laugaricio a je najuniverzálnejší na bežné použitie (web, FB, vizitky);
+**variant G** (medaila) je najkomplexnejší/najslávnostnejší — vhodný ako
+"pečať" na vývesný štít, tabuľu s kurzami, alebo vizitku, kde je priestor
+na detail; **variant B** (navy/mosadz) je najneutrálnejší, ak logo bude
+žiť aj úplne mimo OC Laugaricio.
 
 ## Ako to funguje (celý reťazec)
 
