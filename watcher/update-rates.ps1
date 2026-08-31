@@ -25,12 +25,14 @@ function Parse-MonetkaExport {
     param([string]$FilePath)
 
     # TODO: doplniť po vzorke exportu. Očakávaný výstup — pole objektov:
-    # @{ code = "USD"; unit = 1; buy = 1.070; sell = 1.055 }, ...
+    # @{ code = "USD"; buy = 1.100; sell = 1.060 }, ...
+    # (buy/sell = koľko jednotiek danej meny dostanete za 1 EUR)
     #
     # Bežné veci na doriešiť podľa reálneho súboru:
     #  - oddeľovač (tabulátor / bodkočiarka / čiarka / pevná šírka stĺpcov)
     #  - kódovanie (často Windows-1250 pri slovenských/českých programoch)
-    #  - či je "jednotka" (1 / 100) súčasťou súboru, alebo sa dopočítava podľa meny
+    #  - smer nákup/predaj — over, že v Monetke platí rovnaká konvencia
+    #    (nákup > predaj), inak tu stĺpce jednoducho prehodíme
 
     throw "Parse-MonetkaExport zatiaľ nie je implementované — čaká sa na vzorku exportu."
 }
@@ -38,9 +40,18 @@ function Parse-MonetkaExport {
 function Write-RatesToGoogleSheet {
     param([array]$Rates)
 
-    # TODO: autentifikácia cez service account (JWT) + Google Sheets API v4
-    # PUT https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{range}
-    # s telom { "values": [ ["USD", 1, 1.070, 1.055], ["CZK", 100, 4.020, 3.940], ... ] }
+    # TODO: autentifikácia cez service account (JWT) + Google Sheets API v4.
+    #
+    # Sheet má stĺpce: Mena | Nakupujeme | Predávame | Nakup. predch. | Predaj predch.
+    # Pri KAŽDOM zápise treba pre každú menu:
+    #   1. GET aktuálny riadok zo Sheetu (staré Nakupujeme/Predávame)
+    #   2. PUT nový riadok, kde:
+    #        - Nakup. predch./Predaj predch. = stará hodnota z kroku 1
+    #        - Nakupujeme/Predávame          = nová hodnota z Parse-MonetkaExport
+    #      (ak sa kurz oproti starému nezmenil, "predch." sa netýka meniť —
+    #       zostáva ukazovať poslednú SKUTOČNÚ zmenu, nie každý needitovaný zápis)
+    #   PUT https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{range}
+    #   s telom { "values": [ ["USD", 1.100, 1.060, 1.100, 1.060], ... ] }
     #
     # Zámerne nechávam ako TODO — doplní sa spolu s krokom "vytvoriť service account"
     # v README.md (jednorazové nastavenie v Google Cloud Console).

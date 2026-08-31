@@ -39,6 +39,16 @@ Monogram je od verzie s Facebook odkazom aj priamo v hlavičke `index.html`.
   TRENČÍN" po obvode, dvojfarebný monogram v strede. Mono verzia (jedna
   farba) je pre pečiatku/rytie/gravírovanie alebo tlač na tmavé pozadie.
 
+**Verzia so symbolom €** (namiesto monogramu "Z" — vlastná geometrická
+kresba €, nie len písmo z fontu, nech štýlovo sedí s ostatným):
+
+- `euro-icon-ink.png` / `euro-icon-cream.png` — samotný € symbol
+- `euro-logo-horizontal-ink.png` / `euro-logo-horizontal-cream.png` — € + "ZMENÁREŇ TRENČÍN"
+- `euro-twotone-icon.png` / `euro-twotone-lockup.png` — € v dvoch farbách
+  OC Laugaricio (horný oblúk+priečka červená, dolný oranžová)
+
+Hlavička `index.html` teraz používa tento € symbol (namiesto pôvodného Z).
+
 Odporúčanie: **variant D** (dvojfarebný) najviac spája vlastnú identitu s
 OC Laugaricio a je najuniverzálnejší na bežné použitie (web, FB, vizitky);
 **variant G** (medaila) je najkomplexnejší/najslávnostnejší — vhodný ako
@@ -90,21 +100,26 @@ obchodovanú menu (základná mena je EUR, tá sa neuvádza ako riadok).
 je preto vždy vyššie číslo ako `Predávame` (zmenáreň si tak necháva maržu) —
 presne ako v reálnom príklade z predajne: CZK 24,80 (nákup) / 23,50 (predaj).
 
-| Mena | Nakupujeme | Predávame |
-|------|-----------:|----------:|
-| AUD  | 1.680      | 1.620     |
-| USD  | 1.100      | 1.060     |
-| CAD  | 1.510      | 1.450     |
-| CZK  | 24.80      | 23.50     |
-| GBP  | 0.870      | 0.840     |
-| HUF  | 402.0      | 388.0     |
-| CHF  | 0.945      | 0.915     |
-| PLN  | 4.350      | 4.210     |
-| RON  | 5.050      | 4.910     |
-| BGN  | 2.000      | 1.865     |
-| DKK  | 7.550      | 7.350     |
-| SEK  | 11.500     | 11.000    |
-| NOK  | 11.700     | 11.200    |
+Posledné dva stĺpce (`Nakup. predch.` / `Predaj predch.`) sú hodnoty **pred**
+poslednou zmenou — z nich si `index.html` dopočíta stĺpec "Zmena" (▲/▼ oproti
+poslednému kurzu). Watcher pri každom zápise najprv presunie aktuálnu hodnotu
+do týchto dvoch stĺpcov a až potom zapíše nový kurz do `Nakupujeme`/`Predávame`.
+
+| Mena | Nakupujeme | Predávame | Nakup. predch. | Predaj predch. |
+|------|-----------:|----------:|----------------:|----------------:|
+| AUD  | 1.680      | 1.620     | 1.665            | 1.605            |
+| USD  | 1.100      | 1.060     | 1.100            | 1.060            |
+| CAD  | 1.510      | 1.450     | 1.525            | 1.465            |
+| CZK  | 24.80      | 23.50     | 24.75            | 23.45            |
+| GBP  | 0.870      | 0.840     | 0.870            | 0.840            |
+| HUF  | 402.0      | 388.0     | 405.0            | 391.0            |
+| CHF  | 0.945      | 0.915     | 0.938            | 0.908            |
+| PLN  | 4.350      | 4.210     | 4.350            | 4.210            |
+| RON  | 5.050      | 4.910     | 5.060            | 4.920            |
+| BGN  | 2.000      | 1.865     | 2.000            | 1.865            |
+| DKK  | 7.550      | 7.350     | 7.540            | 7.340            |
+| SEK  | 11.500     | 11.000    | 11.550           | 11.050           |
+| NOK  | 11.700     | 11.200    | 11.680           | 11.180           |
 
 (Toto sú len ilustračné čísla na overenie formátu — reálne hodnoty pôjdu
 priamo z Monetky, takže presnosť/zaokrúhľovanie sa napokon riadi tým, čo
