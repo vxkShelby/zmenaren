@@ -78,12 +78,16 @@
   }
   .currency {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 8px;
-    font-weight: 600;
   }
-  .flag {
-    font-size: 1.2rem;
+  .currency .code {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .currency .country {
+    color: var(--muted);
+    font-size: 0.82rem;
   }
   .buy { color: var(--up); font-weight: 600; }
   .sell { color: var(--down); font-weight: 600; }
@@ -172,9 +176,10 @@
   };
 
   // Meny, ktoré zmenáreň reálne obchoduje (základná mena je EUR).
-  const FLAGS = {
-    AUD: "🇦🇺", USD: "🇺🇸", CAD: "🇨🇦", CZK: "🇨🇿",
-    GBP: "🇬🇧", HUF: "🇭🇺", CHF: "🇨🇭", PLN: "🇵🇱", RON: "🇷🇴",
+  const COUNTRIES = {
+    AUD: "Austrália", USD: "USA", CAD: "Kanada", CZK: "Česko",
+    GBP: "Veľká Británia", HUF: "Maďarsko", CHF: "Švajčiarsko",
+    PLN: "Poľsko", RON: "Rumunsko",
   };
 
   // Ukážkové dáta — zobrazia sa, kým nie je napojený reálny Google Sheet.
@@ -207,8 +212,8 @@
       tr.innerHTML = `
         <td>
           <span class="currency">
-            <span class="flag">${FLAGS[r.code] || "💱"}</span>
-            ${r.code}
+            <span class="code">${r.code}</span>
+            <span class="country">${COUNTRIES[r.code] || ""}</span>
           </span>
         </td>
         <td class="num buy">${formatNumber(r.buy)}</td>
