@@ -3,6 +3,22 @@
 Cieľ projektu: kurzy vyexportované z programu **Monetka** sa majú automaticky
 objaviť na stránke `zmenaren` na `oclaugaricio.sk`, bez ručného prepisovania.
 
+## Logo
+
+V `assets/logo/` je nové logo — monogram "Z" poskladaný z dvoch šípok (číta sa
+súčasne ako písmeno Z aj ako obojsmerná výmena/zmena), navy + krémová +
+mosadzná paleta, wordmark v type Big Shoulders. Súbory majú priehľadné pozadie
+(PNG, 2000 px, pripravené na tlač aj web):
+
+- `icon-ink.png` / `icon-cream.png` — samotný monogram (na svetlé / na tmavé pozadie)
+- `logo-horizontal-ink.png` / `logo-horizontal-cream.png` — monogram + nápis "ZMENÁREŇ TRENČÍN"
+
+Použitie: nahradiť placeholder `logo-white.png` na oclaugaricio.sk (skúsiť
+`logo-horizontal-cream.png`, keďže pôvodný súbor mal v názve "white" — teda
+zrejme tmavé/farebné pozadie za logom), profilovka na Facebooku
+(`icon-ink.png` alebo `icon-cream.png` podľa pozadia), prípadne tlačoviny.
+Monogram je od verzie s Facebook odkazom aj priamo v hlavičke `index.html`.
+
 ## Ako to funguje (celý reťazec)
 
 ```
@@ -58,6 +74,9 @@ presne ako v reálnom príklade z predajne: CZK 24,80 (nákup) / 23,50 (predaj).
 | CHF  | 0.945      | 0.915     |
 | PLN  | 4.350      | 4.210     |
 | RON  | 5.050      | 4.910     |
+| BGN  | 2.000      | 1.865     |
+| DKK  | 7.550      | 7.350     |
+| SEK  | 11.500     | 11.000    |
 
 (Toto sú len ilustračné čísla na overenie formátu — reálne hodnoty pôjdu
 priamo z Monetky, takže presnosť/zaokrúhľovanie sa napokon riadi tým, čo

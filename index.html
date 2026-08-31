@@ -32,6 +32,10 @@
     text-align: center;
     margin-bottom: 18px;
   }
+  .brand-mark {
+    display: block;
+    margin: 0 auto 6px;
+  }
   header h1 {
     font-size: 1.4rem;
     margin: 0 0 4px;
@@ -132,6 +136,15 @@
 <body>
   <div class="board">
     <header>
+      <svg class="brand-mark" viewBox="0 0 120 120" width="44" height="44" aria-hidden="true">
+        <g fill="none" stroke="var(--navy)" stroke-width="24" stroke-linejoin="miter">
+          <polyline points="25,30 95,30 25,90 95,90"/>
+        </g>
+        <g fill="var(--navy)">
+          <polygon points="25,18 25,42 7,30"/>
+          <polygon points="95,78 95,102 113,90"/>
+        </g>
+      </svg>
       <h1>Zmenáreň OC Laugaricio</h1>
       <p class="subtitle">Koľko cudzej meny dostanete za 1 EUR</p>
     </header>
@@ -179,7 +192,8 @@
   const COUNTRIES = {
     AUD: "Austrália", USD: "USA", CAD: "Kanada", CZK: "Česko",
     GBP: "Veľká Británia", HUF: "Maďarsko", CHF: "Švajčiarsko",
-    PLN: "Poľsko", RON: "Rumunsko",
+    PLN: "Poľsko", RON: "Rumunsko", BGN: "Bulharsko",
+    DKK: "Dánsko", SEK: "Švédsko",
   };
 
   // Ukážkové dáta — zobrazia sa, kým nie je napojený reálny Google Sheet.
@@ -196,6 +210,9 @@
     { code: "CHF", buy: 0.945,  sell: 0.915 },
     { code: "PLN", buy: 4.350,  sell: 4.210 },
     { code: "RON", buy: 5.050,  sell: 4.910 },
+    { code: "BGN", buy: 2.000,  sell: 1.865 },
+    { code: "DKK", buy: 7.550,  sell: 7.350 },
+    { code: "SEK", buy: 11.500, sell: 11.000 },
   ];
 
   function formatNumber(n) {
