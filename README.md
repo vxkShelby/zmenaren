@@ -19,6 +19,26 @@ zrejme tmavé/farebné pozadie za logom), profilovka na Facebooku
 (`icon-ink.png` alebo `icon-cream.png` podľa pozadia), prípadne tlačoviny.
 Monogram je od verzie s Facebook odkazom aj priamo v hlavičke `index.html`.
 
+**Ďalšie varianty na výber** (rovnaký monogram, iné spracovanie):
+
+- `variant-a-serif-*.png` — "Zmenáreň" sadzba v serife Ibarra Real Nova
+  (rovnaký font ako má OC Laugaricio na webe)
+- `variant-b-cobrand-*.png` — monogram + "ZMENÁREŇ" + deliaca čiara +
+  "OC LAUGARICIO", navy/mosadzná paleta
+- `variant-c-laugaricio-colors.png` — ako "b", ale s reálnou červeno-oranžovou
+  paletou OC Laugaricio (podľa fotiek exteriéru/loga)
+- `variant-d-twotone.png` / `variant-d-twotone-icon.png` — monogram v dvoch
+  farbách naraz (horná šípka červená, dolná oranžová) — obe farby OC
+  Laugaricio priamo v značke, najvýraznejší variant
+- `variant-e-rounded.png` — mäkšie zaoblené hrany monogramu, navy/mosadz,
+  jemnejší/prémiovejší dojem
+- `variant-f-mono-red.png` — celé jednofarebné (červené), najlepšie na
+  jednofarebnú tlač/vývesný štít z diaľky
+
+Odporúčanie: **variant D** (dvojfarebný) najviac spája vlastnú identitu s
+OC Laugaricio; **variant B** (navy/mosadz) je najuniverzálnejší, ak sa má
+logo používať aj mimo OC (vizitky, vlastný web, tlač).
+
 ## Ako to funguje (celý reťazec)
 
 ```
@@ -77,6 +97,7 @@ presne ako v reálnom príklade z predajne: CZK 24,80 (nákup) / 23,50 (predaj).
 | BGN  | 2.000      | 1.865     |
 | DKK  | 7.550      | 7.350     |
 | SEK  | 11.500     | 11.000    |
+| NOK  | 11.700     | 11.200    |
 
 (Toto sú len ilustračné čísla na overenie formátu — reálne hodnoty pôjdu
 priamo z Monetky, takže presnosť/zaokrúhľovanie sa napokon riadi tým, čo
