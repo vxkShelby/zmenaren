@@ -102,7 +102,7 @@ watcher/update-rates.ps1   (beží na PC v predajni, Windows)
 Google Sheet "Kurzy"        (voľne dostupná "databáza" kurzov, zadarmo)
         │  (číta sa cez verejný gviz JSON endpoint)
         ▼
-index.html (táto stránka, GitHub Pages)   ← https://<username>.github.io/zmenaren/
+index.html (táto stránka, GitHub Pages)   ← https://vxkshelby.github.io/zmenaren/
         │  (vložené ako iframe)
         ▼
 oclaugaricio.sk/obchody-a-restauracie/zmenaren/
@@ -119,9 +119,13 @@ tu v repozitári, GitHub to automaticky nasadí, iframe to hneď zobrazí.
       napojený Google Sheet (bezpečné na náhľad hneď teraz)
 - [x] `watcher/update-rates.ps1` — kostra watchera, reaguje na zmenu súboru
       (nie na časovač); **parsovacia časť čaká na vzorku exportu z Monetky**
+- [x] Zapnúť GitHub Pages pre tento repozitár — **hotovo, živé na
+      https://vxkshelby.github.io/zmenaren/** (repozitár bolo treba
+      najprv zverejniť — GitHub Pages na súkromnom repozitári vyžaduje
+      platený plán). Zatiaľ nasadené z branchu
+      `claude/code-sync-across-devices-fyd65x`, nie `main` — pozn. nižšie.
 - [ ] Vzorka `.txt` exportu z Monetky → doplní sa parser
 - [ ] Vytvoriť Google Sheet + Google Cloud service account (zápis do hárku)
-- [ ] Zapnúť GitHub Pages pre tento repozitár (Settings → Pages)
 - [ ] Poslať vedeniu OC Laugaricio embed kód (nižšie)
 
 ## Čo treba doplniť — krok za krokom
@@ -150,7 +154,6 @@ do týchto dvoch stĺpcov a až potom zapíše nový kurz do `Nakupujeme`/`Pred�
 | CHF  | 0.945      | 0.915     | 0.938            | 0.908            |
 | PLN  | 4.350      | 4.210     | 4.350            | 4.210            |
 | RON  | 5.050      | 4.910     | 5.060            | 4.920            |
-| BGN  | 2.000      | 1.865     | 2.000            | 1.865            |
 | DKK  | 7.550      | 7.350     | 7.540            | 7.340            |
 | SEK  | 11.500     | 11.000    | 11.550           | 11.050           |
 | NOK  | 11.700     | 11.200    | 11.680           | 11.180           |
@@ -177,10 +180,15 @@ overíme, či Monetka exportuje kurzy v rovnakej konvencii ("cudzia mena za
 1 EUR", nákup > predaj) — ak nie, watcher pri zápise do Sheetu len
 prehodí/prepočíta stĺpce, na `index.html` sa nič meniť nemusí.
 
-### 4. Zapnúť GitHub Pages
-V nastaveniach repozitára: **Settings → Pages → Source: Deploy from a
-branch → main → / (root)**. Po uložení bude stránka dostupná na
-`https://<username>.github.io/zmenaren/`.
+### 4. GitHub Pages — hotovo ✅
+Živé na **https://vxkshelby.github.io/zmenaren/**. Repozitár musel byť najprv
+zverejnený (Settings → General → Danger Zone → Change visibility → Public) —
+GitHub Pages na súkromnom repozitári vyžaduje platený plán (GitHub Pro),
+na verejnom je úplne zadarmo bez akéhokoľvek časového obmedzenia.
+
+Momentálne je zdroj nastavený na branch `claude/code-sync-across-devices-fyd65x`
+(Settings → Pages → Branch). Až budú zmeny hotové a overené, dá sa v tom istom
+nastavení prepnúť zdroj na `main`, prípadne najprv branch zmergovať do `main`.
 
 ### 5. Embed kód pre OC Laugaricio
 Toto pošlete webmasterovi OC Laugaricio nech vloží do WordPressu (Custom
@@ -188,14 +196,17 @@ HTML blok) na stránku Zmenáreň:
 
 ```html
 <iframe
-  src="https://<username>.github.io/zmenaren/"
-  style="width:100%; max-width:920px; height:900px; border:0; display:block; margin:0 auto;"
+  src="https://vxkshelby.github.io/zmenaren/"
+  style="width:100%; max-width:1000px; height:1900px; border:0; display:block; margin:0 auto;"
   title="Aktuálny kurzový lístok — Zmenáreň OC Laugaricio">
 </iframe>
 ```
 
 Stránka je responzívna — pri šírke iframu nad ~660px sa kalkulačka zobrazí
-vedľa tabuľky, pod touto hranicou sa sama poskladá pod tabuľku (mobil).
-Odporúčaná max. šírka `920px` je len horný strop, iframe môže byť aj užší.
-(Výšku `900px` doladíme podľa reálneho obsahu, keď bude nasadené — v širokom
-layoute je nižšia, v úzkom/mobilnom vyššia kvôli poskladaniu pod seba.)
+vedľa tabuľky (nižší, širší layout, cca 1850px výšky pri šírke 1000px), pod
+touto hranicou sa sama poskladá pod tabuľku pre mobil (vyšší layout, cca
+2450px). Výška `1900px` vyššie počíta so širším desktopovým zobrazením —
+ak pôjde iframe zobrazovať aj na užších mobilných šírkach OC stránky, treba
+počítať s vyššou hodnotou (cca `2500px`) alebo požiadať webmastera o
+automatické prispôsobenie výšky JavaScriptom (`postMessage`/`iframe-resizer`),
+čo je čistejšie riešenie ako pevná výška — vieme doplniť, ak bude treba.
