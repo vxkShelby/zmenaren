@@ -4,81 +4,117 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kurzový lístok – Zmenáreň OC Laugaricio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --navy: #0b2545;
-    --navy-light: #13355e;
-    --gold: #c9a24b;
-    --bg: #f4f6f9;
-    --text: #1c2b3a;
-    --muted: #6b7a8d;
-    --up: #1e8e5a;
-    --down: #c0392b;
+    --ink: #12203A;
+    --ink-soft: #4B5A72;
+    --paper: #F5EFE2;
+    --paper-line: #E4DAC5;
+    --card: #FFFFFF;
+    --lg-red: #E2231A;
+    --lg-orange: #F5A623;
+    --up: #1E8E5A;
+    --down: #C0392B;
+    --muted: #8A8172;
   }
   * { box-sizing: border-box; }
   html, body {
     margin: 0;
     padding: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Work Sans', Arial, sans-serif;
   }
   .board {
     max-width: 640px;
     margin: 0 auto;
     padding: 20px 16px 28px;
   }
+  .board-card {
+    background: var(--card);
+    border: 1px solid var(--paper-line);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(18, 32, 58, 0.08);
+  }
+  .accent-bar {
+    display: flex;
+    height: 5px;
+  }
+  .accent-bar span { flex: 1; }
+  .accent-bar span:first-child { background: var(--lg-red); }
+  .accent-bar span:last-child { background: var(--lg-orange); }
+
   header {
     text-align: center;
-    margin-bottom: 18px;
+    padding: 26px 20px 18px;
   }
   .brand-mark {
     display: block;
-    margin: 0 auto 6px;
+    margin: 0 auto 10px;
   }
   header h1 {
-    font-size: 1.4rem;
-    margin: 0 0 4px;
-    color: var(--navy);
+    font-family: 'Big Shoulders', sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-size: 2rem;
+    line-height: 1;
+    margin: 0 0 6px;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  header .oc-line {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-size: 0.7rem;
+    color: var(--lg-red);
+    margin: 0 0 10px;
   }
   header .subtitle {
     margin: 0;
     color: var(--muted);
-    font-size: 0.95rem;
+    font-size: 0.85rem;
   }
+
+  .table-wrap { overflow-x: auto; }
   table {
     width: 100%;
     border-collapse: collapse;
-    background: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(11, 37, 69, 0.08);
   }
   thead tr {
-    background: var(--navy);
+    background: var(--ink);
   }
   thead th {
-    color: #fff;
-    font-weight: 600;
+    color: var(--paper);
+    font-family: 'Big Shoulders', sans-serif;
+    font-weight: 700;
     text-align: left;
-    padding: 10px 12px;
-    font-size: 0.85rem;
-    letter-spacing: 0.02em;
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
+    white-space: nowrap;
   }
   thead th.num, tbody td.num {
     text-align: right;
+    font-variant-numeric: tabular-nums;
   }
   tbody td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #eceff3;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--paper-line);
     font-size: 1rem;
   }
   tbody tr:last-child td {
     border-bottom: none;
   }
   tbody tr:nth-child(even) {
-    background: #fafbfc;
+    background: rgba(18, 32, 58, 0.03);
   }
   .currency {
     display: flex;
@@ -86,28 +122,32 @@
     gap: 8px;
   }
   .currency .code {
+    font-family: 'Big Shoulders', sans-serif;
     font-weight: 700;
     letter-spacing: 0.02em;
+    font-size: 1.02rem;
   }
   .currency .country {
     color: var(--muted);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
   }
-  .buy { color: var(--up); font-weight: 600; }
-  .sell { color: var(--down); font-weight: 600; }
+  .buy, .sell {
+    color: var(--ink);
+    font-weight: 600;
+  }
   .change {
-    line-height: 1.5;
+    line-height: 1.55;
     font-size: 0.78rem;
-    font-variant-numeric: tabular-nums;
   }
   .delta { white-space: nowrap; }
   .delta-up { color: var(--up); }
   .delta-down { color: var(--down); }
   .delta-flat { color: var(--muted); }
+
   footer {
-    margin-top: 14px;
+    padding: 14px 20px 0;
     text-align: center;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--muted);
   }
   footer .demo-badge {
@@ -115,25 +155,25 @@
     margin-left: 6px;
     padding: 1px 8px;
     border-radius: 999px;
-    background: #fdf1d8;
-    color: #8a6a1a;
-    font-size: 0.72rem;
+    background: rgba(245, 166, 35, 0.16);
+    color: #8A5A12;
+    font-size: 0.7rem;
     font-weight: 600;
     letter-spacing: 0.02em;
   }
   .contact {
-    margin-top: 18px;
+    padding: 14px 20px 22px;
     text-align: center;
     font-size: 0.85rem;
-    color: var(--navy);
+    color: var(--ink-soft);
   }
-  .contact strong { color: var(--navy); }
+  .contact strong { color: var(--ink); }
   .social-link {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     margin-top: 10px;
-    color: var(--navy-light);
+    color: var(--lg-red);
     text-decoration: none;
     font-weight: 600;
     font-size: 0.85rem;
@@ -144,43 +184,50 @@
 </head>
 <body>
   <div class="board">
-    <header>
-      <svg class="brand-mark" viewBox="0 0 120 120" width="44" height="44" aria-hidden="true">
-        <path fill="none" stroke="var(--navy)" stroke-width="15" stroke-linecap="butt"
-              d="M 82.1,94.4 A 42,42 0 1,1 82.1,25.6
-                 M 4,47 L 78,47
-                 M 4,73 L 78,73"/>
-      </svg>
-      <h1>Zmenáreň OC Laugaricio</h1>
-      <p class="subtitle">Koľko cudzej meny dostanete za 1 EUR</p>
-    </header>
+    <div class="board-card">
+      <div class="accent-bar" aria-hidden="true"><span></span><span></span></div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Mena</th>
-          <th class="num">Nakupujeme</th>
-          <th class="num">Predávame</th>
-          <th class="num">Zmena</th>
-        </tr>
-      </thead>
-      <tbody id="rates-body">
-        <!-- riadky sa vkladajú automaticky cez JS nižšie -->
-      </tbody>
-    </table>
+      <header>
+        <svg class="brand-mark" viewBox="0 0 120 120" width="52" height="52" aria-hidden="true">
+          <path fill="none" stroke="var(--lg-red)" stroke-width="15" stroke-linecap="butt"
+                d="M 82.1,25.6 A 42,42 0 0,0 16.2,63.7 M 4,47 L 78,47"/>
+          <path fill="none" stroke="var(--lg-orange)" stroke-width="15" stroke-linecap="butt"
+                d="M 16,60 A 42,42 0 0,0 82.1,94.4 M 4,73 L 78,73"/>
+        </svg>
+        <h1>Zmenáreň</h1>
+        <p class="oc-line">OC Laugaricio · Trenčín</p>
+        <p class="subtitle">Koľko cudzej meny dostanete za 1 EUR</p>
+      </header>
 
-    <footer>
-      <span id="last-updated">Načítavam kurzy…</span>
-    </footer>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Mena</th>
+              <th class="num">Nakupujeme</th>
+              <th class="num">Predávame</th>
+              <th class="num">Zmena</th>
+            </tr>
+          </thead>
+          <tbody id="rates-body">
+            <!-- riadky sa vkladajú automaticky cez JS nižšie -->
+          </tbody>
+        </table>
+      </div>
 
-    <div class="contact">
-      <strong>OC Laugaricio</strong> · PO–NE 10:00–19:00<br>
-      T: 0908 481 927
-      <br>
-      <a class="social-link" href="https://www.facebook.com/zmenarentrencin/" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.89h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94Z"/></svg>
-        Zmenáreň Trenčín na Facebooku
-      </a>
+      <footer>
+        <span id="last-updated">Načítavam kurzy…</span>
+      </footer>
+
+      <div class="contact">
+        <strong>OC Laugaricio</strong> · PO–NE 10:00–19:00<br>
+        T: 0908 481 927
+        <br>
+        <a class="social-link" href="https://www.facebook.com/zmenarentrencin/" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.89h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94Z"/></svg>
+          Zmenáreň Trenčín na Facebooku
+        </a>
+      </div>
     </div>
   </div>
 
