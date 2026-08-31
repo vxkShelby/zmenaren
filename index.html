@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Aktuálny kurzový lístok a kalkulačka zmenárne v OC Laugaricio, Trenčín — 0 % poplatok za výmenu.">
 <title>Kurzový lístok – Zmenáreň OC Laugaricio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath fill='none' stroke='%23E2231A' stroke-width='16' stroke-linecap='butt' d='M 82.1,25.6 A 42,42 0 0,0 16.2,63.7 M 4,47 L 78,47'/%3E%3Cpath fill='none' stroke='%23F5A623' stroke-width='16' stroke-linecap='butt' d='M 16,60 A 42,42 0 0,0 82.1,94.4 M 4,73 L 78,73'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -18,7 +21,7 @@
     --lg-orange: #F5A623;
     --up: #1E8E5A;
     --down: #C0392B;
-    --muted: #8A8172;
+    --muted: #756D5E;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -41,13 +44,21 @@
     overflow: hidden;
     box-shadow: 0 2px 16px rgba(18, 32, 58, 0.08);
   }
-  .lang-switch {
+  .board-toolbar {
     position: absolute;
     top: 12px;
     right: 14px;
     display: flex;
-    gap: 4px;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 60%;
     z-index: 2;
+  }
+  .lang-switch {
+    display: flex;
+    gap: 4px;
   }
   .lang-btn {
     padding: 3px 7px;
@@ -66,6 +77,14 @@
     border-color: var(--ink);
     color: var(--paper);
   }
+  /* Väčšina veľkostí písma je v rem, takže zväčšenie koreňového font-size
+     stačí na to, aby "veľký text" režim zväčšil celý widget naraz. */
+  html.text-large { font-size: 19px; }
+  /* Pri väčšom texte potrebuje tabuľka viac miesta, než jej ponúka
+     pôvodný dvojstĺpcový layout — radšej ju dáme nad kalkulačku. */
+  html.text-large .content-row { flex-direction: column; }
+  html.text-large .table-wrap,
+  html.text-large .side-column { flex-basis: auto; width: 100%; }
   .accent-bar {
     display: flex;
     height: 5px;
@@ -247,6 +266,8 @@
     background: #fff;
   }
   .calc-row select {
+    flex: 1.1;
+    min-width: 0;
     padding: 9px 10px;
     border: 1px solid var(--paper-line);
     border-radius: 8px;
@@ -255,6 +276,28 @@
     font-size: 0.92rem;
     color: var(--ink);
     background: #fff;
+  }
+  .calc-quick {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .calc-quick-btn {
+    flex: 1;
+    padding: 6px 4px;
+    border-radius: 8px;
+    border: 1px solid var(--paper-line);
+    background: #fff;
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .calc-quick-btn:hover, .calc-quick-btn:focus-visible {
+    border-color: var(--ink);
+    color: var(--ink);
   }
   .calc-result {
     margin-top: 12px;
@@ -356,10 +399,39 @@
     font-weight: 700;
   }
 
+  .seasonal-tip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(245, 166, 35, 0.10);
+    border: 1px solid rgba(245, 166, 35, 0.35);
+    border-radius: 10px;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+  .seasonal-tip-icon { flex: 0 0 auto; font-size: 1rem; }
+
   .table-wrap {
     flex: 2 1 380px;
     min-width: 280px;
     overflow-x: auto;
+  }
+  .rates-freshness {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 8px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+  .rates-freshness-dot {
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--up);
   }
 
   .locate {
@@ -543,16 +615,30 @@
   }
   .social-link:hover { text-decoration: underline; }
   .social-link svg { width: 16px; height: 16px; fill: currentColor; }
+
+  @media print {
+    body { background: #fff; }
+    .board { max-width: 100%; margin: 0; padding: 0; }
+    .board-card { box-shadow: none; border: none; border-radius: 0; }
+    .board-toolbar, .calc, .why-us, .seasonal-tip, .mini-faq, .locate, .rates-freshness { display: none; }
+    .content-row { padding: 0 12px 12px; }
+    .table-wrap { flex-basis: 100%; }
+    table { font-size: 0.9rem; }
+  }
 </style>
 </head>
 <body>
   <div class="board">
     <div class="board-card">
       <div class="accent-bar" aria-hidden="true"><span></span><span></span></div>
-      <div class="lang-switch" role="group" aria-label="Jazyk / Language / Sprache">
-        <button type="button" class="lang-btn active" data-lang="sk">SK</button>
-        <button type="button" class="lang-btn" data-lang="en">EN</button>
-        <button type="button" class="lang-btn" data-lang="de">DE</button>
+      <div class="board-toolbar">
+        <button type="button" class="lang-btn" id="print-btn" aria-label="Tlačiť">🖨</button>
+        <button type="button" class="lang-btn" id="text-size-toggle" aria-pressed="false">A+</button>
+        <div class="lang-switch" role="group" aria-label="Jazyk / Language / Sprache">
+          <button type="button" class="lang-btn active" data-lang="sk" aria-pressed="true">SK</button>
+          <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
+          <button type="button" class="lang-btn" data-lang="de" aria-pressed="false">DE</button>
+        </div>
       </div>
 
       <header>
@@ -578,13 +664,17 @@
 
       <div class="content-row">
         <div class="table-wrap">
+          <div class="rates-freshness">
+            <span class="rates-freshness-dot" aria-hidden="true"></span>
+            <span id="rates-updated-top">—</span>
+          </div>
           <table>
             <thead>
               <tr>
-                <th id="th-currency">Mena</th>
-                <th class="num" id="th-buy">Nakupujeme<br>za 1€</th>
-                <th class="num" id="th-sell">Predávame<br>za 1€</th>
-                <th class="num" id="th-change">Zmena</th>
+                <th id="th-currency" scope="col">Mena</th>
+                <th class="num" id="th-buy" scope="col">Nakupujeme<br>za 1€</th>
+                <th class="num" id="th-sell" scope="col">Predávame<br>za 1€</th>
+                <th class="num" id="th-change" scope="col">Zmena</th>
               </tr>
             </thead>
             <tbody id="rates-body">
@@ -597,13 +687,19 @@
           <div class="calc">
             <p class="calc-title" id="calc-title">Kalkulačka</p>
             <div class="calc-toggle">
-              <button type="button" class="active" data-mode="buy" id="calc-mode-buy">Chcem eurá</button>
-              <button type="button" data-mode="sell" id="calc-mode-sell">Chcem cudziu menu</button>
+              <button type="button" class="active" data-mode="buy" id="calc-mode-buy" aria-pressed="true">Chcem eurá</button>
+              <button type="button" data-mode="sell" id="calc-mode-sell" aria-pressed="false">Chcem cudziu menu</button>
             </div>
             <p class="calc-label" id="calc-amount-label">Mám</p>
             <div class="calc-row">
               <input type="number" id="calc-amount" value="100" min="0" step="any" inputmode="decimal" aria-label="Suma">
               <select id="calc-currency" aria-label="Mena"></select>
+            </div>
+            <div class="calc-quick" id="calc-quick" role="group" aria-label="Rýchle sumy">
+              <button type="button" class="calc-quick-btn" data-amount="50">50</button>
+              <button type="button" class="calc-quick-btn" data-amount="100">100</button>
+              <button type="button" class="calc-quick-btn" data-amount="200">200</button>
+              <button type="button" class="calc-quick-btn" data-amount="500">500</button>
             </div>
             <div class="calc-result"><span id="calc-output">—</span><span class="eur-label">EUR</span></div>
             <p class="calc-helper" id="calc-helper"></p>
@@ -628,10 +724,15 @@
             </div>
           </div>
 
+          <div class="seasonal-tip" id="seasonal-tip" hidden>
+            <span class="seasonal-tip-icon" aria-hidden="true">✈</span>
+            <span id="seasonal-tip-text"></span>
+          </div>
+
           <div class="mini-faq">
             <p class="calc-title" id="faq-title">Časté otázky</p>
             <div class="faq-item">
-              <p class="faq-q" id="faq-q1">Platíte kartou?</p>
+              <p class="faq-q" id="faq-q1">Platba kartou?</p>
               <p class="faq-a" id="faq-a1">Nie, vymieňame len v hotovosti.</p>
             </div>
             <div class="faq-item">
@@ -643,6 +744,7 @@
           <div class="info-notice">
             <p id="notice-id">Doklad totožnosti potrebný pri výmene nad 1 000 €.</p>
             <p id="notice-notes">Neprijímame roztrhané, veľmi opotrebované ani staré (stiahnuté) série bankoviek.</p>
+            <p id="notice-old-usd">100-dolárové bankovky vydané pred rokom 2006 prijímame s poplatkom 1 %.</p>
           </div>
         </div>
       </div>
@@ -655,7 +757,7 @@
           a <strong>Dr. Max</strong>.
         </p>
         <div class="mall-map">
-          <svg class="mall-svg" viewBox="0 0 900 410" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pôdorys OC Laugaricio s vyznačenou polohou zmenárne v chodbe">
+          <svg class="mall-svg" id="mall-svg" viewBox="0 0 900 410" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pôdorys OC Laugaricio s vyznačenou polohou zmenárne v chodbe">
             <defs>
               <pattern id="mallHatch" width="10" height="10" patternTransform="rotate(55)" patternUnits="userSpaceOnUse">
                 <rect width="10" height="10" fill="#fbf9f3"/>
@@ -758,6 +860,29 @@
   ];
 
   // ---------------------------------------------------------------
+  // SEZÓNNE CESTOVATEĽSKÉ TIPY — automatické, podľa dnešného dátumu.
+  // Každý riadok platí od-do (formát "MM-DD", bez roku — funguje to
+  // teda každý rok automaticky, netreba nič ručne prepínať). Obdobie
+  // môže presahovať cez Nový rok (napr. 12-01 → 03-15). Ak platí
+  // viacero riadkov naraz, zobrazí sa prvý z nich — poradie si vieš
+  // upraviť. Ak dnešnému dňu nesedí žiadny riadok, nezobrazí sa nič.
+  // Text je trojjazyčný (sk/en/de), rovnako ako zvyšok stránky.
+  const SEASONAL_TIPS = [
+    {
+      from: "12-01", to: "03-15",
+      sk: "Chystáte sa na lyžovačku? Máme skladom CZK, HUF aj PLN.",
+      en: "Heading skiing? We stock CZK, HUF and PLN.",
+      de: "Auf zur Skisaison? Wir haben CZK, HUF und PLN vorrätig.",
+    },
+    {
+      from: "06-15", to: "09-15",
+      sk: "Cestujete v lete? Vymeníme aj RON a BGN pre Rumunsko a Bulharsko.",
+      en: "Traveling this summer? We also exchange RON and BGN for Romania and Bulgaria.",
+      de: "Reisen Sie im Sommer? Wir wechseln auch RON und BGN für Rumänien und Bulgarien.",
+    },
+  ];
+
+  // ---------------------------------------------------------------
   // PREKLADY — SK / EN / DE. Vlastné mená (Zmenáreň, VÚB banka, mBank,
   // Dr. Max, Flying Tiger a pod.) sa neprekladajú, ostávajú rovnaké
   // vo všetkých jazykoch.
@@ -785,20 +910,25 @@
       labelWant: "Chcem",
       amountAria: "Suma",
       currencyAria: "Mena",
+      quickAmountsAria: "Rýchle sumy",
+      printAria: "Tlačiť",
+      textSizeAria: "Väčšie písmo",
       rateLabel: "Kurz:",
       feeLabel: "Poplatok:",
       helperBuy: (amount, code) => `Toľko EUR dostanete za ${amount} ${code}.`,
       helperSell: (amount, code) => `Toľko EUR zaplatíte za ${amount} ${code}.`,
       whyUs: ["0 % poplatok", "Výhodnejšie ako banka", "Žiadne čakanie"],
       faqTitle: "Časté otázky",
-      faqQ1: "Platíte kartou?",
+      faqQ1: "Platba kartou?",
       faqA1: "Nie, vymieňame len v hotovosti.",
       faqQ2: "Vymieňate aj mince?",
       faqA2: "Áno, ale len české mince — ostatné meny len v bankovkách.",
       noticeId: "Doklad totožnosti potrebný pri výmene nad 1 000 €.",
       noticeNotes: "Neprijímame roztrhané, veľmi opotrebované ani staré (stiahnuté) série bankoviek.",
+      noticeOldUsd: "100-dolárové bankovky vydané pred rokom 2006 prijímame s poplatkom 1 %.",
       locateTitle: "Kde nás nájdete",
       locateCaption: 'Prízemie OC Laugaricio — sme voľne stojaci stánok priamo v strede chodby (spolu so stánkom <strong>mBank</strong>), medzi <strong>VÚB bankou</strong> a <strong>Dr. Max</strong>.',
+      mapAriaLabel: "Pôdorys OC Laugaricio s vyznačenou polohou zmenárne v chodbe",
       mapCorridor: "CHODBA",
       mapSideEntrance: ["VEDĽAJŠÍ", "VCHOD"],
       mapUs: "📍 ZMENÁREŇ",
@@ -829,6 +959,9 @@
       labelWant: "I want",
       amountAria: "Amount",
       currencyAria: "Currency",
+      quickAmountsAria: "Quick amounts",
+      printAria: "Print",
+      textSizeAria: "Larger text",
       rateLabel: "Rate:",
       feeLabel: "Fee:",
       helperBuy: (amount, code) => `You'll receive this much EUR for ${amount} ${code}.`,
@@ -841,8 +974,10 @@
       faqA2: "Yes, but only Czech coins — other currencies in banknotes only.",
       noticeId: "ID required for exchanges over €1,000.",
       noticeNotes: "We don't accept torn, heavily worn, or withdrawn banknote series.",
+      noticeOldUsd: "$100 banknotes issued before 2006 are accepted with a 1% fee.",
       locateTitle: "Where to find us",
       locateCaption: 'Ground floor of OC Laugaricio — we\'re a free-standing stand right in the middle of the corridor (together with the <strong>mBank</strong> stand), between <strong>VÚB banka</strong> and <strong>Dr. Max</strong>.',
+      mapAriaLabel: "Floor plan of OC Laugaricio showing the exchange office's location in the corridor",
       mapCorridor: "CORRIDOR",
       mapSideEntrance: ["SIDE", "ENTRANCE"],
       mapUs: "📍 ZMENÁREŇ",
@@ -873,6 +1008,9 @@
       labelWant: "Ich möchte",
       amountAria: "Betrag",
       currencyAria: "Währung",
+      quickAmountsAria: "Schnellbeträge",
+      printAria: "Drucken",
+      textSizeAria: "Größere Schrift",
       rateLabel: "Kurs:",
       feeLabel: "Gebühr:",
       helperBuy: (amount, code) => `So viel EUR erhalten Sie für ${amount} ${code}.`,
@@ -885,8 +1023,10 @@
       faqA2: "Ja, aber nur tschechische Münzen — andere Währungen nur in Banknoten.",
       noticeId: "Ausweis erforderlich bei einem Umtausch über 1.000 €.",
       noticeNotes: "Wir akzeptieren keine zerrissenen, stark abgenutzten oder eingezogenen Banknotenserien.",
+      noticeOldUsd: "100-Dollar-Banknoten, die vor 2006 ausgegeben wurden, akzeptieren wir mit 1 % Gebühr.",
       locateTitle: "Wo Sie uns finden",
       locateCaption: 'Erdgeschoss von OC Laugaricio — wir sind ein freistehender Stand mitten im Gang (zusammen mit dem Stand <strong>mBank</strong>), zwischen <strong>VÚB banka</strong> und <strong>Dr. Max</strong>.',
+      mapAriaLabel: "Grundriss von OC Laugaricio mit der Lage der Wechselstube im Gang",
       mapCorridor: "GANG",
       mapSideEntrance: ["NEBEN-", "EINGANG"],
       mapUs: "📍 ZMENÁREŇ",
@@ -905,6 +1045,21 @@
     if (savedLang && I18N[savedLang]) currentLang = savedLang;
   } catch (e) { /* localStorage nedostupný (napr. v iframe) — zostane SK */ }
 
+  // ---------------------------------------------------------------
+  // VEĽKÝ TEXT — html.text-large zväčší koreňový font-size, čím sa
+  // (vďaka rem jednotkám) zväčší takmer celý widget naraz.
+  // ---------------------------------------------------------------
+  const TEXT_SIZE_STORAGE_KEY = "zmenaren-text-large";
+  function applyTextSize(large) {
+    document.documentElement.classList.toggle("text-large", large);
+    const btn = document.getElementById("text-size-toggle");
+    btn.classList.toggle("active", large);
+    btn.setAttribute("aria-pressed", String(large));
+    try { localStorage.setItem(TEXT_SIZE_STORAGE_KEY, large ? "1" : "0"); } catch (e) { /* iframe bez prístupu k localStorage */ }
+  }
+  let savedTextLarge = false;
+  try { savedTextLarge = localStorage.getItem(TEXT_SIZE_STORAGE_KEY) === "1"; } catch (e) { /* iframe bez prístupu k localStorage */ }
+
   function nowInTrencin() {
     const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Europe/Bratislava",
@@ -922,6 +1077,29 @@
     const h = Math.floor(totalMin / 60);
     const m = totalMin % 60;
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+
+  // Nájde prvý riadok zo SEASONAL_TIPS, ktorého rozsah (MM-DD) obsahuje
+  // dnešný deň — vrátane rozsahov, ktoré presahujú cez Nový rok.
+  function getActiveSeasonalTip() {
+    const todayMMDD = nowInTrencin().dateStr.slice(5);
+    return SEASONAL_TIPS.find(tip => {
+      if (tip.from <= tip.to) {
+        return todayMMDD >= tip.from && todayMMDD <= tip.to;
+      }
+      return todayMMDD >= tip.from || todayMMDD <= tip.to;
+    });
+  }
+
+  function renderSeasonalTip() {
+    const tip = getActiveSeasonalTip();
+    const el = document.getElementById("seasonal-tip");
+    if (!tip) {
+      el.hidden = true;
+      return;
+    }
+    document.getElementById("seasonal-tip-text").textContent = tip[currentLang] || tip.sk;
+    el.hidden = false;
   }
 
   function computeStatus() {
@@ -1003,6 +1181,15 @@
     return num.toLocaleString("sk-SK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
+  // Kurzy chodia z ručne editovaného Google Sheetu — kód meny (a čokoľvek
+  // iné) preto nikdy nevkladáme do innerHTML bez ošetrenia (napr. preklep
+  // s "<" by inak rozbil stránku).
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[ch]));
+  }
+
   function renderDelta(current, previous) {
     const cur = Number(current);
     const prev = Number(previous);
@@ -1035,8 +1222,8 @@
       tr.innerHTML = `
         <td>
           <span class="currency">
-            <span class="code">${r.code}</span>
-            <span class="country">${countryName(r.code)}</span>
+            <span class="code">${escapeHtml(r.code)}</span>
+            <span class="country">${escapeHtml(countryName(r.code))}</span>
           </span>
         </td>
         <td class="num buy">${formatNumber(r.buy)}</td>
@@ -1049,10 +1236,13 @@
       body.appendChild(tr);
     });
 
-    const now = new Date().toLocaleString("sk-SK");
+    const now = new Date();
+    const nowFull = now.toLocaleString("sk-SK");
+    const nowTime = now.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit" });
     const badge = isDemo ? `<span class="demo-badge">${t.demoBadge}</span>` : "";
     document.getElementById("last-updated").innerHTML =
-      `${t.updated(now)}${badge}`;
+      `${t.updated(nowFull)}${badge}`;
+    document.getElementById("rates-updated-top").textContent = t.updated(nowTime);
 
     populateCalcCurrencies();
     updateCalculator();
@@ -1065,7 +1255,7 @@
     const select = document.getElementById("calc-currency");
     const prevValue = select.value;
     select.innerHTML = latestRates
-      .map(r => `<option value="${r.code}">${r.code} — ${countryName(r.code)}</option>`)
+      .map(r => `<option value="${escapeHtml(r.code)}">${escapeHtml(r.code)} — ${escapeHtml(countryName(r.code))}</option>`)
       .join("");
     if (latestRates.some(r => r.code === prevValue)) {
       select.value = prevValue;
@@ -1089,7 +1279,10 @@
 
     feeDetail.textContent = `${FEE_PERCENT} %`;
 
-    if (!rate || Number.isNaN(amount) || amount < 0) {
+    const buyRate = Number(rate?.buy);
+    const sellRate = Number(rate?.sell);
+    const activeRate = mode === "buy" ? buyRate : sellRate;
+    if (!rate || Number.isNaN(amount) || amount < 0 || !Number.isFinite(activeRate) || activeRate <= 0) {
       output.textContent = "—";
       helper.textContent = "";
       rateDetail.textContent = "—";
@@ -1111,10 +1304,20 @@
 
   document.getElementById("calc-amount").addEventListener("input", updateCalculator);
   document.getElementById("calc-currency").addEventListener("change", updateCalculator);
+  document.querySelectorAll(".calc-quick-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.getElementById("calc-amount").value = btn.dataset.amount;
+      updateCalculator();
+    });
+  });
   document.querySelectorAll(".calc-toggle button").forEach(btn => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".calc-toggle button").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".calc-toggle button").forEach(b => {
+        b.classList.remove("active");
+        b.setAttribute("aria-pressed", "false");
+      });
       btn.classList.add("active");
+      btn.setAttribute("aria-pressed", "true");
       updateCalculator();
     });
   });
@@ -1131,7 +1334,11 @@
     document.documentElement.lang = lang;
     document.title = t.pageTitle;
 
-    document.querySelectorAll(".lang-btn").forEach(b => b.classList.toggle("active", b.dataset.lang === lang));
+    document.querySelectorAll(".lang-switch .lang-btn").forEach(b => {
+      const isActive = b.dataset.lang === lang;
+      b.classList.toggle("active", isActive);
+      b.setAttribute("aria-pressed", String(isActive));
+    });
 
     document.getElementById("fee-badge").textContent = t.feeBadge;
     document.getElementById("hours-static").textContent = t.hours;
@@ -1144,6 +1351,9 @@
     document.getElementById("calc-mode-sell").textContent = t.modeSell;
     document.getElementById("calc-amount").setAttribute("aria-label", t.amountAria);
     document.getElementById("calc-currency").setAttribute("aria-label", t.currencyAria);
+    document.getElementById("calc-quick").setAttribute("aria-label", t.quickAmountsAria);
+    document.getElementById("print-btn").setAttribute("aria-label", t.printAria);
+    document.getElementById("text-size-toggle").setAttribute("aria-label", t.textSizeAria);
     document.getElementById("calc-rate-label").textContent = t.rateLabel;
     document.getElementById("calc-fee-label").textContent = t.feeLabel;
     document.getElementById("why-us-1").textContent = t.whyUs[0];
@@ -1156,6 +1366,8 @@
     document.getElementById("faq-a2").textContent = t.faqA2;
     document.getElementById("notice-id").textContent = t.noticeId;
     document.getElementById("notice-notes").textContent = t.noticeNotes;
+    document.getElementById("notice-old-usd").textContent = t.noticeOldUsd;
+    renderSeasonalTip();
     document.getElementById("locate-title").textContent = t.locateTitle;
     document.getElementById("locate-caption").innerHTML = t.locateCaption;
     document.getElementById("map-corridor").textContent = t.mapCorridor;
@@ -1165,19 +1377,26 @@
     document.getElementById("map-fee").textContent = t.mapFee;
     document.querySelectorAll(".mall-lot").forEach(el => { el.textContent = t.parking; });
     document.getElementById("facebook-link-text").textContent = t.facebook;
+    document.getElementById("mall-svg").setAttribute("aria-label", t.mapAriaLabel);
 
     if (latestRates.length) {
       renderRates(latestRates, lastIsDemo);
     } else {
       document.getElementById("last-updated").textContent = t.loading;
+      document.getElementById("rates-updated-top").textContent = t.loading;
     }
     renderStatus();
     updateCalculator();
   }
 
-  document.querySelectorAll(".lang-btn").forEach(btn => {
+  document.querySelectorAll(".lang-switch .lang-btn").forEach(btn => {
     btn.addEventListener("click", () => applyLanguage(btn.dataset.lang));
   });
+
+  document.getElementById("text-size-toggle").addEventListener("click", () => {
+    applyTextSize(!document.documentElement.classList.contains("text-large"));
+  });
+  document.getElementById("print-btn").addEventListener("click", () => window.print());
 
   async function fetchRates() {
     if (!CONFIG.SHEET_ID) {
@@ -1186,7 +1405,13 @@
     }
     try {
       const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}`;
-      const res = await fetch(url, { cache: "no-store" });
+      // Timeout, aby stránka pri zaseknutej mall WiFi nečakala na fetch donekonečna,
+      // ale rýchlo prepla na záložné (demo) dáta.
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(url, { cache: "no-store", signal: controller.signal });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error(`Sheet fetch zlyhal so stavom ${res.status}`);
       const text = await res.text();
       const jsonText = text.substring(text.indexOf("(") + 1, text.lastIndexOf(")"));
       const data = JSON.parse(jsonText);
@@ -1213,6 +1438,7 @@
   }
 
   applyLanguage(currentLang); // nastaví statické texty (aj tak, ako boli uložené z minulej návštevy)
+  applyTextSize(savedTextLarge);
 
   fetchRates();
   setInterval(fetchRates, CONFIG.REFRESH_INTERVAL_MS);
