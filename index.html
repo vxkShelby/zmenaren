@@ -67,6 +67,19 @@
     color: var(--ink);
     text-wrap: balance;
   }
+  .fee-badge {
+    display: inline-block;
+    margin: 4px 0 10px;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: var(--lg-red);
+    color: #fff;
+    font-family: 'Big Shoulders', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.85rem;
+  }
   header .oc-line {
     font-family: 'Work Sans', sans-serif;
     font-weight: 600;
@@ -210,6 +223,20 @@
     font-size: 0.76rem;
     color: var(--muted);
   }
+  .calc-details {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--paper-line);
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+  }
+  .calc-details strong {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
 
   .table-wrap { overflow-x: auto; }
   table {
@@ -324,6 +351,7 @@
                 d="M 16,60 A 42,42 0 0,0 82.1,94.4 M 4,73 L 78,73"/>
         </svg>
         <h1>Zmenáreň</h1>
+        <p class="fee-badge" id="fee-badge">0 % poplatok za výmenu</p>
         <p class="oc-line">OC Laugaricio · Trenčín</p>
         <div class="hours-row">
           <span>PO–NE 10:00–19:00</span>
@@ -362,6 +390,10 @@
         </div>
         <div class="calc-result"><span id="calc-output">—</span><span class="eur-label">EUR</span></div>
         <p class="calc-helper" id="calc-helper"></p>
+        <div class="calc-details">
+          <span>Kurz: <strong id="calc-rate-detail">—</strong></span>
+          <span>Poplatok: <strong id="calc-fee-detail">—</strong></span>
+        </div>
       </div>
 
       <footer>
@@ -390,6 +422,10 @@
     SHEET_NAME: "Kurzy",  // TODO: názov hárku s kurzami
     REFRESH_INTERVAL_MS: 60000, // ako často si stránka overí nové dáta (60s)
   };
+
+  // Poplatok navyše ku kurzu — ak sa to niekedy zmení, stačí upraviť tu
+  // (a text badge v hlavičke, ten je samostatný, nech sa dá formulovať voľne).
+  const FEE_PERCENT = 0;
 
   // ---------------------------------------------------------------
   // OTVÁRACIA DOBA — bežné hodiny (rovnaké každý deň PO–NE).
@@ -572,14 +608,19 @@
     const rate = latestRates.find(r => r.code === code);
     const output = document.getElementById("calc-output");
     const helper = document.getElementById("calc-helper");
+    const rateDetail = document.getElementById("calc-rate-detail");
+    const feeDetail = document.getElementById("calc-fee-detail");
 
     // "Chcem eurá" → zadávate sumu, ktorú MÁTE v cudzej mene.
     // "Chcem cudziu menu" → zadávate sumu, ktorú CHCETE dostať v cudzej mene.
     document.getElementById("calc-amount-label").textContent = mode === "buy" ? "Mám" : "Chcem";
 
+    feeDetail.textContent = `${FEE_PERCENT} %`;
+
     if (!rate || Number.isNaN(amount) || amount < 0) {
       output.textContent = "—";
       helper.textContent = "";
+      rateDetail.textContent = "—";
       return;
     }
 
@@ -587,9 +628,11 @@
     if (mode === "buy") {
       eur = amount / rate.buy;
       helper.textContent = `Toľko EUR dostanete za ${formatNumber(amount)} ${code}.`;
+      rateDetail.textContent = `1 EUR = ${formatNumber(rate.buy)} ${code}`;
     } else {
       eur = amount / rate.sell;
       helper.textContent = `Toľko EUR zaplatíte za ${formatNumber(amount)} ${code}.`;
+      rateDetail.textContent = `1 EUR = ${formatNumber(rate.sell)} ${code}`;
     }
     output.textContent = eur.toLocaleString("sk-SK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
