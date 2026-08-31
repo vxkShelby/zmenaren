@@ -588,7 +588,7 @@
       eur = amount / rate.buy;
       helper.textContent = `Toľko EUR dostanete za ${formatNumber(amount)} ${code}.`;
     } else {
-      eur = amount * rate.sell;
+      eur = amount / rate.sell;
       helper.textContent = `Toľko EUR zaplatíte za ${formatNumber(amount)} ${code}.`;
     }
     output.textContent = eur.toLocaleString("sk-SK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
