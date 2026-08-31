@@ -158,6 +158,12 @@
     border-color: var(--ink);
     color: var(--paper);
   }
+  .calc-label {
+    margin: 0 0 4px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
   .calc-row {
     display: flex;
     gap: 8px;
@@ -346,9 +352,10 @@
       <div class="calc">
         <p class="calc-title">Kalkulačka</p>
         <div class="calc-toggle">
-          <button type="button" class="active" data-mode="buy" id="calc-mode-buy">Nakupujeme</button>
-          <button type="button" data-mode="sell" id="calc-mode-sell">Predávame</button>
+          <button type="button" class="active" data-mode="buy" id="calc-mode-buy">Chcem eurá</button>
+          <button type="button" data-mode="sell" id="calc-mode-sell">Chcem cudziu menu</button>
         </div>
+        <p class="calc-label" id="calc-amount-label">Mám</p>
         <div class="calc-row">
           <input type="number" id="calc-amount" value="100" min="0" step="any" inputmode="decimal" aria-label="Suma">
           <select id="calc-currency" aria-label="Mena"></select>
@@ -566,6 +573,10 @@
     const output = document.getElementById("calc-output");
     const helper = document.getElementById("calc-helper");
 
+    // "Chcem eurá" → zadávate sumu, ktorú MÁTE v cudzej mene.
+    // "Chcem cudziu menu" → zadávate sumu, ktorú CHCETE dostať v cudzej mene.
+    document.getElementById("calc-amount-label").textContent = mode === "buy" ? "Mám" : "Chcem";
+
     if (!rate || Number.isNaN(amount) || amount < 0) {
       output.textContent = "—";
       helper.textContent = "";
@@ -575,7 +586,7 @@
     let eur;
     if (mode === "buy") {
       eur = amount / rate.buy;
-      helper.textContent = `Toľko EUR dostanete, keď nám predáte ${formatNumber(amount)} ${code}.`;
+      helper.textContent = `Toľko EUR dostanete za ${formatNumber(amount)} ${code}.`;
     } else {
       eur = amount * rate.sell;
       helper.textContent = `Toľko EUR zaplatíte za ${formatNumber(amount)} ${code}.`;
