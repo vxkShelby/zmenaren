@@ -26,7 +26,7 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 $ServiceAccountKeyPath = "C:\zmenaren-watcher\service-account.json"
 
 # TODO: ID Google Sheetu (rovnaké ako CONFIG.SHEET_ID v index.html) + názov hárku
-$SpreadsheetId = ""
+$SpreadsheetId = "19eNa65B_kWDJVdm5vUAcr42v4GoWZNabtgpjE0zLjgA"
 $SheetName     = "Kurzy"
 
 # TODO: presná cesta k priečinku/súboru, kam Monetka exportuje kurzy
