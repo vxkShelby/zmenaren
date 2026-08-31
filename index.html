@@ -399,6 +399,18 @@
     font-weight: 700;
   }
 
+  .fetch-error-banner {
+    margin: 0 20px 16px;
+    padding: 10px 14px;
+    background: rgba(226, 35, 26, 0.08);
+    border: 1px solid rgba(226, 35, 26, 0.35);
+    border-radius: 10px;
+    color: var(--lg-red);
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-align: center;
+  }
+
   .seasonal-tip {
     display: flex;
     align-items: center;
@@ -620,7 +632,7 @@
     body { background: #fff; }
     .board { max-width: 100%; margin: 0; padding: 0; }
     .board-card { box-shadow: none; border: none; border-radius: 0; }
-    .board-toolbar, .calc, .why-us, .seasonal-tip, .mini-faq, .locate, .rates-freshness { display: none; }
+    .board-toolbar, .calc, .why-us, .seasonal-tip, .mini-faq, .locate, .rates-freshness, .fetch-error-banner { display: none; }
     .content-row { padding: 0 12px 12px; }
     .table-wrap { flex-basis: 100%; }
     table { font-size: 0.9rem; }
@@ -661,6 +673,8 @@
         </div>
         <span class="status-note" id="status-note"></span>
       </header>
+
+      <div class="fetch-error-banner" id="fetch-error-banner" hidden>⚠ <span id="fetch-error-text"></span></div>
 
       <div class="content-row">
         <div class="table-wrap">
@@ -933,6 +947,7 @@
       mapFee: "0 % poplatok",
       parking: "P Parkovisko",
       loading: "Načítavam kurzy…",
+      fetchError: "Nepodarilo sa načítať aktuálne kurzy — zobrazujú sa ukážkové dáta.",
       updated: (date) => `Aktualizované: ${date}`,
       demoBadge: "ukážkové dáta",
       facebook: "Zmenáreň Trenčín na Facebooku",
@@ -981,6 +996,7 @@
       mapFee: "0% fee",
       parking: "P Parking",
       loading: "Loading rates…",
+      fetchError: "Couldn't load current rates — showing sample data.",
       updated: (date) => `Updated: ${date}`,
       demoBadge: "sample data",
       facebook: "Zmenáreň Trenčín on Facebook",
@@ -1029,6 +1045,7 @@
       mapFee: "0 % Gebühr",
       parking: "P Parkplatz",
       loading: "Kurse werden geladen…",
+      fetchError: "Aktuelle Kurse konnten nicht geladen werden — es werden Beispieldaten angezeigt.",
       updated: (date) => `Aktualisiert: ${date}`,
       demoBadge: "Beispieldaten",
       facebook: "Zmenáreň Trenčín auf Facebook",
@@ -1204,6 +1221,11 @@
   // Posledné načítané kurzy — kalkulačka nižšie z nich vždy počíta.
   let latestRates = [];
   let lastIsDemo = true;
+  // true len keď je CONFIG.SHEET_ID nastavené, ale posledný pokus o načítanie
+  // reálne zlyhal (nie keď SHEET_ID zámerne chýba pred zapojením Sheetu) —
+  // to je jediný prípad, kedy má zmysel ukázať nápadné upozornenie namiesto
+  // len malého štítka "ukážkové dáta".
+  let lastFetchFailed = false;
 
   function renderRates(rates, isDemo) {
     latestRates = rates;
@@ -1249,7 +1271,11 @@
     const select = document.getElementById("calc-currency");
     const prevValue = select.value;
     select.innerHTML = latestRates
-      .map(r => `<option value="${escapeHtml(r.code)}">${escapeHtml(r.code)} — ${escapeHtml(countryName(r.code))}</option>`)
+      .map(r => {
+        const country = countryName(r.code);
+        const label = country ? `${r.code} — ${country}` : r.code;
+        return `<option value="${escapeHtml(r.code)}">${escapeHtml(label)}</option>`;
+      })
       .join("");
     if (latestRates.some(r => r.code === prevValue)) {
       select.value = prevValue;
@@ -1378,6 +1404,8 @@
       document.getElementById("last-updated").textContent = t.loading;
       document.getElementById("rates-updated-top").textContent = t.loading;
     }
+    document.getElementById("fetch-error-text").textContent = t.fetchError;
+    document.getElementById("fetch-error-banner").hidden = !lastFetchFailed;
     renderStatus();
     updateCalculator();
   }
@@ -1415,7 +1443,10 @@
       // sú hodnoty pred poslednou zmenou kurzu, na výpočet stĺpca "Zmena")
       const rates = data.table.rows
         .map(row => ({
-          code: row.c[0]?.v,
+          // .trim().toUpperCase() — vlastník hárku môže omylom napísať kód
+          // meny malými písmenami alebo s medzerou navyše ("czk "); bez
+          // normalizácie by sa taký riadok tváril ako neznáma mena.
+          code: String(row.c[0]?.v ?? "").trim().toUpperCase(),
           buy: row.c[1]?.v,
           sell: row.c[2]?.v,
           prevBuy: row.c[3]?.v,
@@ -1423,9 +1454,14 @@
         }))
         .filter(r => r.code);
 
+      lastFetchFailed = false;
+      document.getElementById("fetch-error-banner").hidden = true;
       renderRates(rates.length ? rates : DEMO_RATES, rates.length === 0);
     } catch (err) {
       console.error("Nepodarilo sa načítať kurzy z Google Sheetu:", err);
+      lastFetchFailed = true;
+      document.getElementById("fetch-error-text").textContent = I18N[currentLang].fetchError;
+      document.getElementById("fetch-error-banner").hidden = false;
       renderRates(DEMO_RATES, true);
     }
   }
@@ -1438,6 +1474,28 @@
 
   renderStatus();
   setInterval(renderStatus, 30000); // stav (Otvorené/Zatvorené) sa prekontroluje každých 30s
+
+  // ---------------------------------------------------------------
+  // AUTOMATICKÁ VÝŠKA PRE IFRAME — keď je stránka vložená ako iframe
+  // (napr. na oclaugaricio.sk), pošle rodičovskej stránke svoju aktuálnu
+  // výšku cez postMessage vždy, keď sa obsah zmení (jazyk, veľkosť textu,
+  // sezónny tip, počet riadkov v tabuľke...). Rodičovská stránka podľa
+  // toho vie iframe priebežne prispôsobiť — pozri README, časť "Embed kód".
+  // Ak stránka nie je v iframe (napr. priamo na GitHub Pages), nerobí nič.
+  if (window.parent !== window) {
+    const reportHeight = () => {
+      window.parent.postMessage(
+        { type: "zmenaren-resize", height: document.documentElement.scrollHeight },
+        "*"
+      );
+    };
+    if (window.ResizeObserver) {
+      new ResizeObserver(reportHeight).observe(document.body);
+    } else {
+      window.addEventListener("resize", reportHeight);
+    }
+    reportHeight();
+  }
 </script>
 </body>
 </html>
