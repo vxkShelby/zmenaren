@@ -41,19 +41,27 @@ tu v repozitári, GitHub to automaticky nasadí, iframe to hneď zobrazí.
 
 ### 1. Google Sheet
 Vytvoriť Google Sheet s hárkom (napr. `Kurzy`) v tvare — riadok pre každú
-obchodovanú menu (základná mena je EUR, tá sa neuvádza ako riadok):
+obchodovanú menu (základná mena je EUR, tá sa neuvádza ako riadok).
 
-| Mena | Jednotka | Nákup | Predaj |
-|------|----------|-------|--------|
-| AUD  | 1        | 0.600 | 0.580  |
-| USD  | 1        | 1.070 | 1.055  |
-| CAD  | 1        | 0.760 | 0.740  |
-| CZK  | 100      | 4.020 | 3.940  |
-| GBP  | 1        | 1.180 | 1.155  |
-| HUF  | 100      | 0.252 | 0.245  |
-| CHF  | 1        | 1.045 | 1.020  |
-| PLN  | 1        | 0.234 | 0.228  |
-| RON  | 1        | 0.200 | 0.192  |
+**Konvencia: koľko jednotiek cudzej meny dostanete za 1 EUR.** `Nakupujeme`
+je preto vždy vyššie číslo ako `Predávame` (zmenáreň si tak necháva maržu) —
+presne ako v reálnom príklade z predajne: CZK 24,80 (nákup) / 23,50 (predaj).
+
+| Mena | Nakupujeme | Predávame |
+|------|-----------:|----------:|
+| AUD  | 1.680      | 1.620     |
+| USD  | 1.100      | 1.060     |
+| CAD  | 1.510      | 1.450     |
+| CZK  | 24.80      | 23.50     |
+| GBP  | 0.870      | 0.840     |
+| HUF  | 402.0      | 388.0     |
+| CHF  | 0.945      | 0.915     |
+| PLN  | 4.350      | 4.210     |
+| RON  | 5.050      | 4.910     |
+
+(Toto sú len ilustračné čísla na overenie formátu — reálne hodnoty pôjdu
+priamo z Monetky, takže presnosť/zaokrúhľovanie sa napokon riadi tým, čo
+exportuje ona.)
 
 Zdieľať ho ako **"Ktokoľvek s odkazom — Zobrazovať"**, nech ho `index.html`
 vie čítať. ID hárku (z URL) sa potom doplní do `CONFIG.SHEET_ID`
@@ -68,7 +76,10 @@ keď bude parser hotový.
 ### 3. Vzorka exportu z Monetky
 Potrebné, aby sa dala doplniť funkcia `Parse-MonetkaExport` v
 `watcher/update-rates.ps1` — hlavne oddeľovač stĺpcov, kódovanie
-(pravdepodobne Windows-1250) a presné poradie/formát hodnôt.
+(pravdepodobne Windows-1250) a presné poradie/formát hodnôt. Zároveň
+overíme, či Monetka exportuje kurzy v rovnakej konvencii ("cudzia mena za
+1 EUR", nákup > predaj) — ak nie, watcher pri zápise do Sheetu len
+prehodí/prepočíta stĺpce, na `index.html` sa nič meniť nemusí.
 
 ### 4. Zapnúť GitHub Pages
 V nastaveniach repozitára: **Settings → Pages → Source: Deploy from a
