@@ -120,6 +120,91 @@
     margin-top: 2px;
   }
 
+  .calc {
+    margin: 4px 20px 20px;
+    padding: 16px;
+    background: rgba(18, 32, 58, 0.03);
+    border: 1px solid var(--paper-line);
+    border-radius: 12px;
+  }
+  .calc-title {
+    font-family: 'Big Shoulders', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    margin: 0 0 10px;
+  }
+  .calc-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .calc-toggle button {
+    flex: 1;
+    padding: 7px 6px;
+    border-radius: 8px;
+    border: 1px solid var(--paper-line);
+    background: #fff;
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .calc-toggle button.active {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .calc-row {
+    display: flex;
+    gap: 8px;
+  }
+  .calc-row input[type="number"] {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 10px;
+    border: 1px solid var(--paper-line);
+    border-radius: 8px;
+    font-family: 'Work Sans', sans-serif;
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    background: #fff;
+  }
+  .calc-row select {
+    padding: 9px 10px;
+    border: 1px solid var(--paper-line);
+    border-radius: 8px;
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--ink);
+    background: #fff;
+  }
+  .calc-result {
+    margin-top: 12px;
+    font-family: 'Big Shoulders', sans-serif;
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .calc-result .eur-label {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+  .calc-helper {
+    margin: 4px 0 0;
+    font-size: 0.76rem;
+    color: var(--muted);
+  }
+
   .table-wrap { overflow-x: auto; }
   table {
     width: 100%;
@@ -256,6 +341,20 @@
             <!-- riadky sa vkladajú automaticky cez JS nižšie -->
           </tbody>
         </table>
+      </div>
+
+      <div class="calc">
+        <p class="calc-title">Kalkulačka</p>
+        <div class="calc-toggle">
+          <button type="button" class="active" data-mode="buy" id="calc-mode-buy">Nakupujeme</button>
+          <button type="button" data-mode="sell" id="calc-mode-sell">Predávame</button>
+        </div>
+        <div class="calc-row">
+          <input type="number" id="calc-amount" value="100" min="0" step="any" inputmode="decimal" aria-label="Suma">
+          <select id="calc-currency" aria-label="Mena"></select>
+        </div>
+        <div class="calc-result"><span id="calc-output">—</span><span class="eur-label">EUR</span></div>
+        <p class="calc-helper" id="calc-helper"></p>
       </div>
 
       <footer>
@@ -410,7 +509,11 @@
     return `<span class="delta ${cls}">${arrow} ${value}</span>`;
   }
 
+  // Posledné načítané kurzy — kalkulačka nižšie z nich vždy počíta.
+  let latestRates = [];
+
   function renderRates(rates, isDemo) {
+    latestRates = rates;
     const body = document.getElementById("rates-body");
     body.innerHTML = "";
     rates.forEach(r => {
@@ -436,7 +539,59 @@
     const badge = isDemo ? '<span class="demo-badge">ukážkové dáta</span>' : "";
     document.getElementById("last-updated").innerHTML =
       `Aktualizované: ${now}${badge}`;
+
+    populateCalcCurrencies();
+    updateCalculator();
   }
+
+  // ---------------------------------------------------------------
+  // KALKULAČKA — počíta z latestRates (rovnaké dáta ako tabuľka).
+  // ---------------------------------------------------------------
+  function populateCalcCurrencies() {
+    const select = document.getElementById("calc-currency");
+    const prevValue = select.value;
+    select.innerHTML = latestRates
+      .map(r => `<option value="${r.code}">${r.code} — ${COUNTRIES[r.code] || ""}</option>`)
+      .join("");
+    if (latestRates.some(r => r.code === prevValue)) {
+      select.value = prevValue;
+    }
+  }
+
+  function updateCalculator() {
+    const amount = parseFloat(document.getElementById("calc-amount").value);
+    const code = document.getElementById("calc-currency").value;
+    const mode = document.querySelector(".calc-toggle button.active")?.dataset.mode || "buy";
+    const rate = latestRates.find(r => r.code === code);
+    const output = document.getElementById("calc-output");
+    const helper = document.getElementById("calc-helper");
+
+    if (!rate || Number.isNaN(amount) || amount < 0) {
+      output.textContent = "—";
+      helper.textContent = "";
+      return;
+    }
+
+    let eur;
+    if (mode === "buy") {
+      eur = amount / rate.buy;
+      helper.textContent = `Toľko EUR dostanete, keď nám predáte ${formatNumber(amount)} ${code}.`;
+    } else {
+      eur = amount * rate.sell;
+      helper.textContent = `Toľko EUR zaplatíte za ${formatNumber(amount)} ${code}.`;
+    }
+    output.textContent = eur.toLocaleString("sk-SK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  document.getElementById("calc-amount").addEventListener("input", updateCalculator);
+  document.getElementById("calc-currency").addEventListener("change", updateCalculator);
+  document.querySelectorAll(".calc-toggle button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".calc-toggle button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      updateCalculator();
+    });
+  });
 
   async function fetchRates() {
     if (!CONFIG.SHEET_ID) {
