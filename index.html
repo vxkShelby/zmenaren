@@ -81,6 +81,44 @@
     color: var(--muted);
     font-size: 0.85rem;
   }
+  .hours-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 2px 0 10px;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px 3px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .status-pill .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+  .status-open { background: rgba(30, 142, 90, 0.13); color: var(--up); }
+  .status-open .dot { background: var(--up); }
+  .status-soon { background: rgba(245, 166, 35, 0.16); color: #8A5A12; }
+  .status-soon .dot { background: var(--lg-orange); }
+  .status-closed { background: rgba(18, 32, 58, 0.07); color: var(--ink-soft); }
+  .status-closed .dot { background: var(--muted); }
+  .status-note {
+    display: block;
+    font-size: 0.76rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
 
   .table-wrap { overflow-x: auto; }
   table {
@@ -196,6 +234,11 @@
         </svg>
         <h1>Zmenáreň</h1>
         <p class="oc-line">OC Laugaricio · Trenčín</p>
+        <div class="hours-row">
+          <span>PO–NE 10:00–19:00</span>
+          <span class="status-pill" id="status-pill"><span class="dot"></span><span id="status-label">…</span></span>
+        </div>
+        <span class="status-note" id="status-note"></span>
         <p class="subtitle">Koľko cudzej meny dostanete za 1 EUR</p>
       </header>
 
@@ -220,7 +263,7 @@
       </footer>
 
       <div class="contact">
-        <strong>OC Laugaricio</strong> · PO–NE 10:00–19:00<br>
+        <strong>OC Laugaricio</strong> · Belá, Trenčín<br>
         T: 0908 481 927
         <br>
         <a class="social-link" href="https://www.facebook.com/zmenarentrencin/" target="_blank" rel="noopener">
@@ -241,6 +284,79 @@
     SHEET_NAME: "Kurzy",  // TODO: názov hárku s kurzami
     REFRESH_INTERVAL_MS: 60000, // ako často si stránka overí nové dáta (60s)
   };
+
+  // ---------------------------------------------------------------
+  // OTVÁRACIA DOBA — bežné hodiny (rovnaké každý deň PO–NE).
+  // ---------------------------------------------------------------
+  const REGULAR_HOURS = { openMin: 10 * 60, closeMin: 19 * 60 };
+  const CLOSING_SOON_MIN = 30; // posledných X minút pred zatvorením = "čoskoro zatvárame"
+
+  // Dni, kedy má OC Laugaricio zatvorené — NIE každý štátny sviatok platí,
+  // dopĺňať len tie, kedy je centrum reálne zatvorené (potvrdiť s vedením OC).
+  // Formát dátumu: "RRRR-MM-DD".
+  const HOLIDAY_CLOSURES = [
+    // { date: "2026-12-25", label: "1. sviatok vianočný" },
+    // { date: "2026-01-01", label: "Nový rok" },
+  ];
+
+  // Mimoriadne/neplánované zatvorenie (napr. dovolenka, choroba) — pridaj
+  // riadok s dnešným (alebo budúcim) dátumom a text sa zobrazí namiesto
+  // bežného stavu. Zmaž/zakomentuj riadok, keď zase otvoríte.
+  const MANUAL_CLOSURES = [
+    // { date: "2026-09-05", note: "Dnes mimoriadne zatvorené" },
+  ];
+
+  function nowInTrencin() {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Bratislava",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hour12: false,
+    }).formatToParts(new Date());
+    const get = (type) => parts.find(p => p.type === type).value;
+    return {
+      dateStr: `${get("year")}-${get("month")}-${get("day")}`,
+      minutesSinceMidnight: parseInt(get("hour"), 10) * 60 + parseInt(get("minute"), 10),
+    };
+  }
+
+  function formatHM(totalMin) {
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+
+  function computeStatus() {
+    const { dateStr, minutesSinceMidnight } = nowInTrencin();
+
+    const manual = MANUAL_CLOSURES.find(c => c.date === dateStr);
+    if (manual) {
+      return { state: "closed", label: "Zatvorené", note: manual.note };
+    }
+    const holiday = HOLIDAY_CLOSURES.find(h => h.date === dateStr);
+    if (holiday) {
+      return { state: "closed", label: "Zatvorené", note: holiday.label };
+    }
+
+    const { openMin, closeMin } = REGULAR_HOURS;
+    if (minutesSinceMidnight < openMin) {
+      return { state: "closed", label: "Zatvorené", note: `Otvárame o ${formatHM(openMin)}` };
+    }
+    if (minutesSinceMidnight >= closeMin) {
+      return { state: "closed", label: "Zatvorené", note: "" };
+    }
+    if (minutesSinceMidnight >= closeMin - CLOSING_SOON_MIN) {
+      return { state: "soon", label: "Čoskoro zatvárame", note: `Zatvárame o ${formatHM(closeMin)}` };
+    }
+    return { state: "open", label: "Otvorené", note: "" };
+  }
+
+  function renderStatus() {
+    const status = computeStatus();
+    const pill = document.getElementById("status-pill");
+    pill.className = `status-pill status-${status.state}`;
+    document.getElementById("status-label").textContent = status.label;
+    document.getElementById("status-note").textContent = status.note || "";
+  }
 
   // Meny, ktoré zmenáreň reálne obchoduje (základná mena je EUR).
   const COUNTRIES = {
@@ -357,6 +473,9 @@
 
   fetchRates();
   setInterval(fetchRates, CONFIG.REFRESH_INTERVAL_MS);
+
+  renderStatus();
+  setInterval(renderStatus, 30000); // stav (Otvorené/Zatvorené) sa prekontroluje každých 30s
 </script>
 </body>
 </html>

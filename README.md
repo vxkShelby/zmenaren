@@ -3,6 +3,40 @@
 Cieľ projektu: kurzy vyexportované z programu **Monetka** sa majú automaticky
 objaviť na stránke `zmenaren` na `oclaugaricio.sk`, bez ručného prepisovania.
 
+## Otváracia doba a živý status (Otvorené / Čoskoro zatvárame / Zatvorené)
+
+`index.html` zobrazuje v hlavičke okrem "PO–NE 10:00–19:00" aj štítok, ktorý sa
+sám prepína podľa aktuálneho času **v Trenčíne** (časové pásmo Europe/Bratislava,
+nezávisí od toho, kde je návštevník stránky). Logika je v `<script>` bloku pod
+`REGULAR_HOURS`.
+
+**Ako pridať deň, keď má OC Laugaricio zatvorené (sviatok):**
+Doplň riadok do `HOLIDAY_CLOSURES` v `index.html`, napr.:
+```js
+const HOLIDAY_CLOSURES = [
+  { date: "2026-12-25", label: "1. sviatok vianočný" },
+];
+```
+Pozor — nie je to automatické podľa slovenského kalendára, pridávajú sa len tie
+dni, kedy má **OC Laugaricio reálne zatvorené** (potvrdiť s vedením OC).
+
+**Ako nahlásiť mimoriadne/neplánované zatvorenie** (napr. dovolenka, choroba):
+Doplň riadok do `MANUAL_CLOSURES` s dnešným/budúcim dátumom:
+```js
+const MANUAL_CLOSURES = [
+  { date: "2026-09-05", note: "Dnes mimoriadne zatvorené" },
+];
+```
+Po skončení zatvorenia riadok zmaž alebo zakomentuj.
+
+Toto vieš upraviť aj sama/sám priamo v repozitári na GitHube (Edit ✏️ pri
+súbore `index.html` → uložiť → GitHub Pages sa aktualizuje do minúty), alebo mi
+jednoducho napíš dátum a dôvod a doplním to za teba.
+
+*(Neskôr, keď bude zapojený Google Sheet na kurzy, sa dá tou istou cestou
+presunúť aj otváracia doba/zatvorenia do Sheetu — vtedy by šlo upravovať úplne
+bez zásahu do kódu, len zaškrtnutím v tabuľke.)*
+
 ## Logo
 
 V `assets/logo/` je nové logo — monogram "Z" poskladaný z dvoch šípok (číta sa
