@@ -284,62 +284,87 @@
     color: var(--ink-soft);
   }
   .locate-caption strong { color: var(--ink); }
+
   .mall-map { overflow-x: auto; }
-  .mall-dir {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.66rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--muted);
-    margin-bottom: 6px;
-    min-width: 620px;
+  .mall-floor {
+    min-width: 640px;
+    border: 2px solid var(--ink);
+    background: #fff;
   }
-  .mall-row {
-    display: flex;
-    gap: 6px;
-    min-width: 620px;
-  }
-  .mall-row + .mall-row { margin-top: 6px; }
+  .mall-row { display: flex; }
   .mall-unit {
     flex: 1 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 12px 10px;
-    background: #fff;
+    padding: 16px 6px;
+    margin: -1px 0 0 -1px;
     border: 1px solid var(--paper-line);
-    border-radius: 6px;
-    font-size: 0.7rem;
-    font-weight: 600;
+    background: #fbf9f3;
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.64rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
     color: var(--ink-soft);
     text-align: center;
-    white-space: nowrap;
+    line-height: 1.25;
   }
-  .mall-gap { flex: 1.4 0 auto; border: none; background: none; }
-  .mall-corridor {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 8px 0;
-    min-width: 620px;
-    color: var(--muted);
-    font-size: 0.62rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-  .mall-corridor::before, .mall-corridor::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: repeating-linear-gradient(90deg, var(--paper-line) 0 6px, transparent 6px 10px);
-  }
+  .mall-row:first-child .mall-unit { margin-top: 0; }
+  .mall-row .mall-unit:first-child { margin-left: 0; }
   .mall-unit--us {
     background: var(--lg-red);
     border-color: var(--lg-red);
     color: #fff;
     font-weight: 800;
-    box-shadow: 0 0 0 4px rgba(226, 35, 26, 0.14);
+  }
+  .mall-walkway {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 12px;
+    background:
+      linear-gradient(90deg, var(--paper-line) 50%, transparent 0) repeat-x;
+    background-size: 10px 1px;
+    background-position: left center;
+  }
+  .mall-entrance {
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--lg-red);
+    white-space: nowrap;
+  }
+  .mall-walkway-label {
+    font-size: 0.56rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  .mall-parking {
+    min-width: 640px;
+    display: flex;
+    gap: 2px;
+    margin-top: 2px;
+  }
+  .mall-lot {
+    flex: 1;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: repeating-linear-gradient(
+      55deg, var(--paper-line), var(--paper-line) 2px, transparent 2px, transparent 9px
+    );
+    border: 1px solid var(--paper-line);
+    border-top: none;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
   table {
     width: 100%;
@@ -511,29 +536,33 @@
           <strong>VÚB bankou</strong> (oproti Lidlu).
         </p>
         <div class="mall-map">
-          <div class="mall-dir">
-            <span>← Smer centrum Trenčín</span>
-            <span>Smer letisko Trenčín →</span>
+          <div class="mall-floor">
+            <div class="mall-row">
+              <div class="mall-unit" style="flex-grow:1.3">Tatra banka</div>
+              <div class="mall-unit" style="flex-grow:1">Tchibo</div>
+              <div class="mall-unit" style="flex-grow:2">EXIsport</div>
+              <div class="mall-unit" style="flex-grow:1.6">Planeo</div>
+              <div class="mall-unit" style="flex-grow:1.4">Intersport</div>
+            </div>
+            <div class="mall-walkway">
+              <span class="mall-entrance">⇽ centrum Trenčín</span>
+              <span class="mall-walkway-label">chodba</span>
+              <span class="mall-entrance">letisko Trenčín ⇾</span>
+            </div>
+            <div class="mall-row">
+              <div class="mall-unit" style="flex-grow:1.2">Starbucks</div>
+              <div class="mall-unit" style="flex-grow:1">iSTYLE</div>
+              <div class="mall-unit" style="flex-grow:1.4">DM drogerie</div>
+              <div class="mall-unit" style="flex-grow:1.3">Panta Rhei</div>
+              <div class="mall-unit" style="flex-grow:1.4">VÚB banka</div>
+              <div class="mall-unit mall-unit--us" style="flex-grow:1.5">📍 Zmenáreň</div>
+              <div class="mall-unit" style="flex-grow:1">Dr. Max</div>
+              <div class="mall-unit" style="flex-grow:1.6">Lidl</div>
+            </div>
           </div>
-          <div class="mall-row">
-            <div class="mall-unit">Tatra banka</div>
-            <div class="mall-unit">Tchibo</div>
-            <div class="mall-unit">EXIsport</div>
-            <div class="mall-gap"></div>
-            <div class="mall-unit">Planeo</div>
-            <div class="mall-unit">Intersport</div>
-          </div>
-          <div class="mall-corridor">chodba</div>
-          <div class="mall-row">
-            <div class="mall-unit">Starbucks</div>
-            <div class="mall-unit">iSTYLE</div>
-            <div class="mall-gap"></div>
-            <div class="mall-unit">VÚB banka</div>
-            <div class="mall-unit">DM drogerie</div>
-            <div class="mall-unit">Panta Rhei</div>
-            <div class="mall-unit">Dr. Max</div>
-            <div class="mall-unit mall-unit--us">📍 Zmenáreň</div>
-            <div class="mall-unit">Lidl</div>
+          <div class="mall-parking">
+            <div class="mall-lot">P Parkovisko</div>
+            <div class="mall-lot">P Parkovisko</div>
           </div>
         </div>
       </div>
