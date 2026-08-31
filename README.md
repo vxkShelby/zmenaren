@@ -227,8 +227,11 @@ nastavení prepnúť zdroj na `main`, prípadne najprv branch zmergovať do `mai
 
 ### 5. Embed kód pre OC Laugaricio
 Toto pošlete webmasterovi OC Laugaricio nech vloží do WordPressu (Custom
-HTML blok) na stránku Zmenáreň:
+HTML blok) na stránku Zmenáreň. **Dôležité:** musí to byť blok typu **Custom
+HTML** (nie Odstavec/Paragraph s "Convert to blocks") — inak WordPress vie
+`<iframe>`/`<script>` pri uložení odstrániť.
 
+**Jednoduchá verzia** (pevná výška):
 ```html
 <iframe
   src="https://vxkshelby.github.io/zmenaren/"
@@ -240,8 +243,29 @@ HTML blok) na stránku Zmenáreň:
 Stránka je responzívna — pri šírke iframu nad ~660px sa kalkulačka zobrazí
 vedľa tabuľky (nižší, širší layout, cca 1850px výšky pri šírke 1000px), pod
 touto hranicou sa sama poskladá pod tabuľku pre mobil (vyšší layout, cca
-2450px). Výška `1900px` vyššie počíta so širším desktopovým zobrazením —
-ak pôjde iframe zobrazovať aj na užších mobilných šírkach OC stránky, treba
-počítať s vyššou hodnotou (cca `2500px`) alebo požiadať webmastera o
-automatické prispôsobenie výšky JavaScriptom (`postMessage`/`iframe-resizer`),
-čo je čistejšie riešenie ako pevná výška — vieme doplniť, ak bude treba.
+2450px). Skutočná výška sa navyše mení aj podľa jazyka, veľkosti textu a
+toho, či je zapnutý sezónny tip — pri pevnej výške sa preto môže občas
+obsah zdola orezať alebo sa v iframe objaví vlastný posuvník.
+
+**Odporúčaná verzia** (výška sa prispôsobuje sama): `index.html` už pri
+vložení do iframu automaticky posiela svoju výšku rodičovskej stránke cez
+`postMessage` (typ správy `"zmenaren-resize"`). Webmaster stačí pridať tento
+skript hneď za iframe (v tom istom Custom HTML bloku):
+
+```html
+<iframe id="zmenaren-frame"
+  src="https://vxkshelby.github.io/zmenaren/"
+  style="width:100%; max-width:1000px; border:0; display:block; margin:0 auto;"
+  title="Aktuálny kurzový lístok — Zmenáreň OC Laugaricio">
+</iframe>
+<script>
+  window.addEventListener("message", function (e) {
+    if (e.data && e.data.type === "zmenaren-resize") {
+      document.getElementById("zmenaren-frame").style.height = e.data.height + "px";
+    }
+  });
+</script>
+```
+
+Tým sa iframe vždy presne prispôsobí obsahu, bez orezávania či zbytočných
+medzier — toto je čistejšie riešenie, ak ho vie webmaster nasadiť.
