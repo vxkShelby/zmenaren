@@ -94,6 +94,23 @@
     color: var(--muted);
     font-size: 0.85rem;
   }
+  .phone-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 2px 0 12px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Big Shoulders', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+  }
+  .phone-cta:hover { opacity: 0.88; }
+  .phone-cta svg { width: 16px; height: 16px; fill: currentColor; }
   .hours-row {
     display: flex;
     align-items: center;
@@ -353,6 +370,10 @@
         <h1>Zmenáreň</h1>
         <p class="fee-badge" id="fee-badge">0 % poplatok za výmenu</p>
         <p class="oc-line">OC Laugaricio · Trenčín</p>
+        <a class="phone-cta" href="tel:+421908481927">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1L6.6 10.8Z"/></svg>
+          0908 481 927
+        </a>
         <div class="hours-row">
           <span>PO–NE 10:00–19:00</span>
           <span class="status-pill" id="status-pill"><span class="dot"></span><span id="status-label">…</span></span>
@@ -401,8 +422,7 @@
       </footer>
 
       <div class="contact">
-        <strong>OC Laugaricio</strong> · Belá, Trenčín<br>
-        T: 0908 481 927
+        <strong>OC Laugaricio</strong> · Belá, Trenčín
         <br>
         <a class="social-link" href="https://www.facebook.com/zmenarentrencin/" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.89h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94Z"/></svg>
