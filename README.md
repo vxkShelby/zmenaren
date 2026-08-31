@@ -125,16 +125,20 @@ tu v repozitári, GitHub to automaticky nasadí, iframe to hneď zobrazí.
       najprv zverejniť — GitHub Pages na súkromnom repozitári vyžaduje
       platený plán). Zatiaľ nasadené z branchu
       `claude/code-sync-across-devices-fyd65x`, nie `main` — pozn. nižšie.
-- [ ] Vytvoriť Google Sheet (krok 1 nižšie) + Google Cloud service account
-      (krok 2 nižšie) — obe treba spraviť ty, keďže vyžadujú tvoj Google účet
-- [ ] Vzorka `.txt` exportu z Monetky → doplní sa parser (krok 3 nižšie)
+- [x] Google Sheet vytvorený a zdieľaný, `CONFIG.SHEET_ID` aj `$SpreadsheetId`
+      doplnené — stránka naživo číta z neho (overené, "ukážkové dáta" štítok
+      zmizol). Service account vytvorený, kľúč uložený na PC v predajni.
+- [ ] Vzorka `.txt` exportu z Monetky → doplní sa parser (krok 3 nižšie) —
+      **posledný krok pred tým, než watcher začne kurzy zapisovať sám**
 - [ ] Poslať vedeniu OC Laugaricio embed kód (nižšie)
 
 ## Čo treba doplniť — krok za krokom
 
-### 1. Google Sheet
-Vytvoriť Google Sheet s hárkom (napr. `Kurzy`) v tvare — riadok pre každú
-obchodovanú menu (základná mena je EUR, tá sa neuvádza ako riadok).
+### 1. Google Sheet — hotovo ✅
+Hárok `Kurzy` je vytvorený, zdieľaný a `index.html` z neho naživo číta
+(`CONFIG.SHEET_ID` aj `$SpreadsheetId` sú doplnené). Formát nižšie zostáva
+ako referencia — riadok pre každú obchodovanú menu (základná mena je EUR,
+tá sa neuvádza ako riadok).
 
 **Konvencia: koľko jednotiek cudzej meny dostanete za 1 EUR.** `Nakupujeme`
 je preto vždy vyššie číslo ako `Predávame` (zmenáreň si tak necháva maržu) —
@@ -168,12 +172,14 @@ Zdieľať ho ako **"Ktokoľvek s odkazom — Zobrazovať"**, nech ho `index.html
 vie čítať. ID hárku (z URL) sa potom doplní do `CONFIG.SHEET_ID`
 v `index.html` a do `$SpreadsheetId` v `watcher/update-rates.ps1`.
 
-### 2. Google Cloud service account (na zápis z watchera) — hotovo v kóde ✅
-Zápisová časť (`Write-RatesToGoogleSheet` v `watcher/update-rates.ps1`) je už
-naprogramovaná — funguje bez ohľadu na to, aký formát nakoniec bude mať
-Monetka export (to sa doplní do `Parse-MonetkaExport` samostatne, viď krok 3).
-Aby fungovala, treba raz nastaviť service account v Google Cloud Console —
-je to bezplatné, žiadna platobná karta sa nevyžaduje:
+### 2. Google Cloud service account (na zápis z watchera) — hotovo ✅
+Zápisová časť (`Write-RatesToGoogleSheet` v `watcher/update-rates.ps1`) je
+naprogramovaná a service account je vytvorený, zdieľaný so Sheetom ako
+Editor a kľúč uložený na PC v predajni. Watcher teda vie zapisovať — chýba
+mu už len naplniť `Parse-MonetkaExport` (krok 3), aby vedel, ČO má zapísať.
+
+Postup nižšie zostáva ako referencia, keby bolo treba niekedy vytvoriť
+ďalší service account (napr. pri strate kľúča):
 
 1. Choď na **console.cloud.google.com** → hore vytvor nový projekt (napr.
    "zmenaren-watcher").
