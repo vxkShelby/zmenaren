@@ -34,11 +34,37 @@
     padding: 20px 16px 28px;
   }
   .board-card {
+    position: relative;
     background: var(--card);
     border: 1px solid var(--paper-line);
     border-radius: 14px;
     overflow: hidden;
     box-shadow: 0 2px 16px rgba(18, 32, 58, 0.08);
+  }
+  .lang-switch {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    display: flex;
+    gap: 4px;
+    z-index: 2;
+  }
+  .lang-btn {
+    padding: 3px 7px;
+    border-radius: 6px;
+    border: 1px solid var(--paper-line);
+    background: #fff;
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .lang-btn.active {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
   }
   .accent-bar {
     display: flex;
@@ -152,9 +178,14 @@
     gap: 20px;
     padding: 0 20px 20px;
   }
-  .calc {
+  .side-column {
     flex: 1.3 1 340px;
     min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .calc {
     margin: 0;
     padding: 16px;
     background: rgba(18, 32, 58, 0.03);
@@ -258,6 +289,71 @@
   .calc-details strong {
     color: var(--ink);
     font-variant-numeric: tabular-nums;
+  }
+
+  .why-us {
+    display: flex;
+    gap: 8px;
+  }
+  .why-us-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 6px;
+    background: #fff;
+    border: 1px solid var(--paper-line);
+    border-top: 3px solid var(--lg-red);
+    border-radius: 8px;
+    text-align: center;
+  }
+  .why-us-item:nth-child(2) { border-top-color: var(--lg-orange); }
+  .why-us-item:nth-child(3) { border-top-color: var(--ink); }
+  .why-us-icon { font-size: 1.05rem; }
+  .why-us-label {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 1.25;
+    color: var(--ink-soft);
+  }
+
+  .mini-faq {
+    padding: 14px 16px;
+    background: rgba(18, 32, 58, 0.03);
+    border: 1px solid var(--paper-line);
+    border-radius: 12px;
+  }
+  .faq-item + .faq-item { margin-top: 10px; }
+  .faq-q {
+    margin: 0 0 2px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--ink);
+  }
+  .faq-a {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+
+  .info-notice {
+    padding: 12px 14px;
+    background: rgba(226, 35, 26, 0.05);
+    border: 1px solid rgba(226, 35, 26, 0.25);
+    border-radius: 10px;
+    font-size: 0.76rem;
+    color: var(--ink-soft);
+  }
+  .info-notice p { margin: 0; }
+  .info-notice p + p { margin-top: 6px; }
+  .info-notice p::before {
+    content: "• ";
+    color: var(--lg-red);
+    font-weight: 700;
   }
 
   .table-wrap {
@@ -453,6 +549,11 @@
   <div class="board">
     <div class="board-card">
       <div class="accent-bar" aria-hidden="true"><span></span><span></span></div>
+      <div class="lang-switch" role="group" aria-label="Jazyk / Language / Sprache">
+        <button type="button" class="lang-btn active" data-lang="sk">SK</button>
+        <button type="button" class="lang-btn" data-lang="en">EN</button>
+        <button type="button" class="lang-btn" data-lang="de">DE</button>
+      </div>
 
       <header>
         <svg class="brand-mark" viewBox="0 0 120 120" width="52" height="52" aria-hidden="true">
@@ -469,7 +570,7 @@
           0908 481 927
         </a>
         <div class="hours-row">
-          <span>PO–NE 10:00–19:00</span>
+          <span id="hours-static">PO–NE 10:00–19:00</span>
           <span class="status-pill" id="status-pill"><span class="dot"></span><span id="status-label">…</span></span>
         </div>
         <span class="status-note" id="status-note"></span>
@@ -480,10 +581,10 @@
           <table>
             <thead>
               <tr>
-                <th>Mena</th>
-                <th class="num">Nakupujeme<br>za 1€</th>
-                <th class="num">Predávame<br>za 1€</th>
-                <th class="num">Zmena</th>
+                <th id="th-currency">Mena</th>
+                <th class="num" id="th-buy">Nakupujeme<br>za 1€</th>
+                <th class="num" id="th-sell">Predávame<br>za 1€</th>
+                <th class="num" id="th-change">Zmena</th>
               </tr>
             </thead>
             <tbody id="rates-body">
@@ -492,29 +593,63 @@
           </table>
         </div>
 
-        <div class="calc">
-          <p class="calc-title">Kalkulačka</p>
-          <div class="calc-toggle">
-            <button type="button" class="active" data-mode="buy" id="calc-mode-buy">Chcem eurá</button>
-            <button type="button" data-mode="sell" id="calc-mode-sell">Chcem cudziu menu</button>
+        <div class="side-column">
+          <div class="calc">
+            <p class="calc-title" id="calc-title">Kalkulačka</p>
+            <div class="calc-toggle">
+              <button type="button" class="active" data-mode="buy" id="calc-mode-buy">Chcem eurá</button>
+              <button type="button" data-mode="sell" id="calc-mode-sell">Chcem cudziu menu</button>
+            </div>
+            <p class="calc-label" id="calc-amount-label">Mám</p>
+            <div class="calc-row">
+              <input type="number" id="calc-amount" value="100" min="0" step="any" inputmode="decimal" aria-label="Suma">
+              <select id="calc-currency" aria-label="Mena"></select>
+            </div>
+            <div class="calc-result"><span id="calc-output">—</span><span class="eur-label">EUR</span></div>
+            <p class="calc-helper" id="calc-helper"></p>
+            <div class="calc-details">
+              <span><span id="calc-rate-label">Kurz:</span> <strong id="calc-rate-detail">—</strong></span>
+              <span><span id="calc-fee-label">Poplatok:</span> <strong id="calc-fee-detail">—</strong></span>
+            </div>
           </div>
-          <p class="calc-label" id="calc-amount-label">Mám</p>
-          <div class="calc-row">
-            <input type="number" id="calc-amount" value="100" min="0" step="any" inputmode="decimal" aria-label="Suma">
-            <select id="calc-currency" aria-label="Mena"></select>
+
+          <div class="why-us">
+            <div class="why-us-item">
+              <span class="why-us-icon" aria-hidden="true">%</span>
+              <span class="why-us-label" id="why-us-1">0 % poplatok</span>
+            </div>
+            <div class="why-us-item">
+              <span class="why-us-icon" aria-hidden="true">€</span>
+              <span class="why-us-label" id="why-us-2">Výhodnejšie ako banka</span>
+            </div>
+            <div class="why-us-item">
+              <span class="why-us-icon" aria-hidden="true">⏱</span>
+              <span class="why-us-label" id="why-us-3">Žiadne čakanie</span>
+            </div>
           </div>
-          <div class="calc-result"><span id="calc-output">—</span><span class="eur-label">EUR</span></div>
-          <p class="calc-helper" id="calc-helper"></p>
-          <div class="calc-details">
-            <span>Kurz: <strong id="calc-rate-detail">—</strong></span>
-            <span>Poplatok: <strong id="calc-fee-detail">—</strong></span>
+
+          <div class="mini-faq">
+            <p class="calc-title" id="faq-title">Časté otázky</p>
+            <div class="faq-item">
+              <p class="faq-q" id="faq-q1">Platíte kartou?</p>
+              <p class="faq-a" id="faq-a1">Nie, vymieňame len v hotovosti.</p>
+            </div>
+            <div class="faq-item">
+              <p class="faq-q" id="faq-q2">Vymieňate aj mince?</p>
+              <p class="faq-a" id="faq-a2">Áno, ale len české mince — ostatné meny len v bankovkách.</p>
+            </div>
+          </div>
+
+          <div class="info-notice">
+            <p id="notice-id">Doklad totožnosti potrebný pri výmene nad 1 000 €.</p>
+            <p id="notice-notes">Neprijímame roztrhané, veľmi opotrebované ani staré (stiahnuté) série bankoviek.</p>
           </div>
         </div>
       </div>
 
       <div class="locate">
-        <p class="calc-title">Kde nás nájdete</p>
-        <p class="locate-caption">
+        <p class="calc-title" id="locate-title">Kde nás nájdete</p>
+        <p class="locate-caption" id="locate-caption">
           Prízemie OC Laugaricio — sme voľne stojaci stánok priamo v strede chodby
           (spolu so stánkom <strong>mBank</strong>), medzi <strong>VÚB bankou</strong>
           a <strong>Dr. Max</strong>.
@@ -538,7 +673,7 @@
             <rect x="666" y="6" width="228" height="100" fill="url(#mallHatch)" stroke="var(--paper-line)"/>
 
             <line x1="26" y1="200" x2="874" y2="200" stroke="var(--paper-line)" stroke-width="2" stroke-dasharray="2 9"/>
-            <text x="790" y="193" text-anchor="middle" class="mall-svg-corridor-label">CHODBA</text>
+            <text x="790" y="193" text-anchor="middle" class="mall-svg-corridor-label" id="map-corridor">CHODBA</text>
 
             <rect x="104" y="164" width="80" height="80" fill="rgba(18,32,58,0.12)"/>
             <rect x="100" y="160" width="80" height="80" fill="#fbf9f3" stroke="var(--ink)" stroke-width="1.5"/>
@@ -546,8 +681,8 @@
 
             <rect x="344" y="150" width="108" height="108" fill="rgba(226,35,26,0.28)"/>
             <rect x="340" y="146" width="108" height="108" fill="var(--lg-red)" stroke="var(--lg-red)" stroke-width="1.5"/>
-            <text x="394" y="196" text-anchor="middle" class="mall-svg-kiosk mall-svg-kiosk--us">📍 ZMENÁREŇ</text>
-            <text x="394" y="214" text-anchor="middle" class="mall-svg-kiosk-sub">0 % poplatok</text>
+            <text x="394" y="196" text-anchor="middle" class="mall-svg-kiosk mall-svg-kiosk--us" id="map-us">📍 ZMENÁREŇ</text>
+            <text x="394" y="214" text-anchor="middle" class="mall-svg-kiosk-sub" id="map-fee">0 % poplatok</text>
 
             <rect x="6" y="294" width="250" height="100" fill="url(#mallHatch)" stroke="var(--paper-line)"/>
             <rect x="256" y="294" width="110" height="100" fill="#fbf9f3" stroke="var(--paper-line)"/>
@@ -559,8 +694,8 @@
             <rect x="606" y="294" width="100" height="100" fill="#fbf9f3" stroke="var(--paper-line)"/>
             <text x="656" y="349" text-anchor="middle" class="mall-svg-label">DR. MAX</text>
             <rect x="706" y="294" width="110" height="100" fill="#fff" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 5"/>
-            <text x="761" y="341" text-anchor="middle" class="mall-svg-entrance">VEDĽAJŠÍ</text>
-            <text x="761" y="353" text-anchor="middle" class="mall-svg-entrance">VCHOD</text>
+            <text x="761" y="341" text-anchor="middle" class="mall-svg-entrance" id="map-entrance-1">VEDĽAJŠÍ</text>
+            <text x="761" y="353" text-anchor="middle" class="mall-svg-entrance" id="map-entrance-2">VCHOD</text>
             <rect x="816" y="294" width="78" height="100" fill="#fbf9f3" stroke="var(--paper-line)"/>
             <text x="855" y="349" text-anchor="middle" class="mall-svg-label">TELEKOM</text>
           </svg>
@@ -580,7 +715,7 @@
         <br>
         <a class="social-link" href="https://www.facebook.com/zmenarentrencin/" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.89h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94Z"/></svg>
-          Zmenáreň Trenčín na Facebooku
+          <span id="facebook-link-text">Zmenáreň Trenčín na Facebooku</span>
         </a>
       </div>
     </div>
@@ -622,6 +757,154 @@
     // { date: "2026-09-05", note: "Dnes mimoriadne zatvorené" },
   ];
 
+  // ---------------------------------------------------------------
+  // PREKLADY — SK / EN / DE. Vlastné mená (Zmenáreň, VÚB banka, mBank,
+  // Dr. Max, Flying Tiger a pod.) sa neprekladajú, ostávajú rovnaké
+  // vo všetkých jazykoch.
+  // ---------------------------------------------------------------
+  const LANG_STORAGE_KEY = "zmenaren-lang";
+
+  const I18N = {
+    sk: {
+      pageTitle: "Kurzový lístok – Zmenáreň OC Laugaricio",
+      feeBadge: "0 % poplatok za výmenu",
+      hours: "PO–NE 10:00–19:00",
+      statusOpen: "Otvorené",
+      statusSoon: "Čoskoro zatvárame",
+      statusClosed: "Zatvorené",
+      opensAt: (t) => `Otvárame o ${t}`,
+      closesAt: (t) => `Zatvárame o ${t}`,
+      thCurrency: "Mena",
+      thBuy: "Nakupujeme<br>za 1€",
+      thSell: "Predávame<br>za 1€",
+      thChange: "Zmena",
+      calcTitle: "Kalkulačka",
+      modeBuy: "Chcem eurá",
+      modeSell: "Chcem cudziu menu",
+      labelHave: "Mám",
+      labelWant: "Chcem",
+      amountAria: "Suma",
+      currencyAria: "Mena",
+      rateLabel: "Kurz:",
+      feeLabel: "Poplatok:",
+      helperBuy: (amount, code) => `Toľko EUR dostanete za ${amount} ${code}.`,
+      helperSell: (amount, code) => `Toľko EUR zaplatíte za ${amount} ${code}.`,
+      whyUs: ["0 % poplatok", "Výhodnejšie ako banka", "Žiadne čakanie"],
+      faqTitle: "Časté otázky",
+      faqQ1: "Platíte kartou?",
+      faqA1: "Nie, vymieňame len v hotovosti.",
+      faqQ2: "Vymieňate aj mince?",
+      faqA2: "Áno, ale len české mince — ostatné meny len v bankovkách.",
+      noticeId: "Doklad totožnosti potrebný pri výmene nad 1 000 €.",
+      noticeNotes: "Neprijímame roztrhané, veľmi opotrebované ani staré (stiahnuté) série bankoviek.",
+      locateTitle: "Kde nás nájdete",
+      locateCaption: 'Prízemie OC Laugaricio — sme voľne stojaci stánok priamo v strede chodby (spolu so stánkom <strong>mBank</strong>), medzi <strong>VÚB bankou</strong> a <strong>Dr. Max</strong>.',
+      mapCorridor: "CHODBA",
+      mapSideEntrance: ["VEDĽAJŠÍ", "VCHOD"],
+      mapUs: "📍 ZMENÁREŇ",
+      mapFee: "0 % poplatok",
+      parking: "P Parkovisko",
+      loading: "Načítavam kurzy…",
+      updated: (date) => `Aktualizované: ${date}`,
+      demoBadge: "ukážkové dáta",
+      facebook: "Zmenáreň Trenčín na Facebooku",
+    },
+    en: {
+      pageTitle: "Exchange Rates – Zmenáreň OC Laugaricio",
+      feeBadge: "0% exchange fee",
+      hours: "Mon–Sun 10:00–19:00",
+      statusOpen: "Open",
+      statusSoon: "Closing soon",
+      statusClosed: "Closed",
+      opensAt: (t) => `Opens at ${t}`,
+      closesAt: (t) => `Closes at ${t}`,
+      thCurrency: "Currency",
+      thBuy: "We buy<br>per 1€",
+      thSell: "We sell<br>per 1€",
+      thChange: "Change",
+      calcTitle: "Calculator",
+      modeBuy: "I want euros",
+      modeSell: "I want foreign currency",
+      labelHave: "I have",
+      labelWant: "I want",
+      amountAria: "Amount",
+      currencyAria: "Currency",
+      rateLabel: "Rate:",
+      feeLabel: "Fee:",
+      helperBuy: (amount, code) => `You'll receive this much EUR for ${amount} ${code}.`,
+      helperSell: (amount, code) => `You'll pay this much EUR for ${amount} ${code}.`,
+      whyUs: ["0% fee", "Better rate than a bank", "No waiting"],
+      faqTitle: "FAQ",
+      faqQ1: "Can I pay by card?",
+      faqA1: "No, we only exchange cash.",
+      faqQ2: "Do you exchange coins?",
+      faqA2: "Yes, but only Czech coins — other currencies in banknotes only.",
+      noticeId: "ID required for exchanges over €1,000.",
+      noticeNotes: "We don't accept torn, heavily worn, or withdrawn banknote series.",
+      locateTitle: "Where to find us",
+      locateCaption: 'Ground floor of OC Laugaricio — we\'re a free-standing stand right in the middle of the corridor (together with the <strong>mBank</strong> stand), between <strong>VÚB banka</strong> and <strong>Dr. Max</strong>.',
+      mapCorridor: "CORRIDOR",
+      mapSideEntrance: ["SIDE", "ENTRANCE"],
+      mapUs: "📍 ZMENÁREŇ",
+      mapFee: "0% fee",
+      parking: "P Parking",
+      loading: "Loading rates…",
+      updated: (date) => `Updated: ${date}`,
+      demoBadge: "sample data",
+      facebook: "Zmenáreň Trenčín on Facebook",
+    },
+    de: {
+      pageTitle: "Wechselkurse – Zmenáreň OC Laugaricio",
+      feeBadge: "0 % Wechselgebühr",
+      hours: "Mo–So 10:00–19:00",
+      statusOpen: "Geöffnet",
+      statusSoon: "Bald geschlossen",
+      statusClosed: "Geschlossen",
+      opensAt: (t) => `Öffnet um ${t}`,
+      closesAt: (t) => `Schließt um ${t}`,
+      thCurrency: "Währung",
+      thBuy: "Wir kaufen<br>pro 1€",
+      thSell: "Wir verkaufen<br>pro 1€",
+      thChange: "Änderung",
+      calcTitle: "Rechner",
+      modeBuy: "Ich möchte Euro",
+      modeSell: "Ich möchte Fremdwährung",
+      labelHave: "Ich habe",
+      labelWant: "Ich möchte",
+      amountAria: "Betrag",
+      currencyAria: "Währung",
+      rateLabel: "Kurs:",
+      feeLabel: "Gebühr:",
+      helperBuy: (amount, code) => `So viel EUR erhalten Sie für ${amount} ${code}.`,
+      helperSell: (amount, code) => `So viel EUR zahlen Sie für ${amount} ${code}.`,
+      whyUs: ["0 % Gebühr", "Günstiger als die Bank", "Kein Warten"],
+      faqTitle: "Häufige Fragen",
+      faqQ1: "Kann ich mit Karte zahlen?",
+      faqA1: "Nein, wir wechseln nur Bargeld.",
+      faqQ2: "Wechseln Sie auch Münzen?",
+      faqA2: "Ja, aber nur tschechische Münzen — andere Währungen nur in Banknoten.",
+      noticeId: "Ausweis erforderlich bei einem Umtausch über 1.000 €.",
+      noticeNotes: "Wir akzeptieren keine zerrissenen, stark abgenutzten oder eingezogenen Banknotenserien.",
+      locateTitle: "Wo Sie uns finden",
+      locateCaption: 'Erdgeschoss von OC Laugaricio — wir sind ein freistehender Stand mitten im Gang (zusammen mit dem Stand <strong>mBank</strong>), zwischen <strong>VÚB banka</strong> und <strong>Dr. Max</strong>.',
+      mapCorridor: "GANG",
+      mapSideEntrance: ["NEBEN-", "EINGANG"],
+      mapUs: "📍 ZMENÁREŇ",
+      mapFee: "0 % Gebühr",
+      parking: "P Parkplatz",
+      loading: "Kurse werden geladen…",
+      updated: (date) => `Aktualisiert: ${date}`,
+      demoBadge: "Beispieldaten",
+      facebook: "Zmenáreň Trenčín auf Facebook",
+    },
+  };
+
+  let currentLang = "sk";
+  try {
+    const savedLang = localStorage.getItem(LANG_STORAGE_KEY);
+    if (savedLang && I18N[savedLang]) currentLang = savedLang;
+  } catch (e) { /* localStorage nedostupný (napr. v iframe) — zostane SK */ }
+
   function nowInTrencin() {
     const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Europe/Bratislava",
@@ -642,28 +925,29 @@
   }
 
   function computeStatus() {
+    const t = I18N[currentLang];
     const { dateStr, minutesSinceMidnight } = nowInTrencin();
 
     const manual = MANUAL_CLOSURES.find(c => c.date === dateStr);
     if (manual) {
-      return { state: "closed", label: "Zatvorené", note: manual.note };
+      return { state: "closed", label: t.statusClosed, note: manual.note };
     }
     const holiday = HOLIDAY_CLOSURES.find(h => h.date === dateStr);
     if (holiday) {
-      return { state: "closed", label: "Zatvorené", note: holiday.label };
+      return { state: "closed", label: t.statusClosed, note: holiday.label };
     }
 
     const { openMin, closeMin } = REGULAR_HOURS;
     if (minutesSinceMidnight < openMin) {
-      return { state: "closed", label: "Zatvorené", note: `Otvárame o ${formatHM(openMin)}` };
+      return { state: "closed", label: t.statusClosed, note: t.opensAt(formatHM(openMin)) };
     }
     if (minutesSinceMidnight >= closeMin) {
-      return { state: "closed", label: "Zatvorené", note: "" };
+      return { state: "closed", label: t.statusClosed, note: "" };
     }
     if (minutesSinceMidnight >= closeMin - CLOSING_SOON_MIN) {
-      return { state: "soon", label: "Čoskoro zatvárame", note: `Zatvárame o ${formatHM(closeMin)}` };
+      return { state: "soon", label: t.statusSoon, note: t.closesAt(formatHM(closeMin)) };
     }
-    return { state: "open", label: "Otvorené", note: "" };
+    return { state: "open", label: t.statusOpen, note: "" };
   }
 
   function renderStatus() {
@@ -676,11 +960,21 @@
 
   // Meny, ktoré zmenáreň reálne obchoduje (základná mena je EUR).
   const COUNTRIES = {
-    AUD: "Austrália", USD: "USA", CAD: "Kanada", CZK: "Česko",
-    GBP: "Veľká Británia", HUF: "Maďarsko", CHF: "Švajčiarsko",
-    PLN: "Poľsko", RON: "Rumunsko", BGN: "Bulharsko",
-    DKK: "Dánsko", SEK: "Švédsko", NOK: "Nórsko",
+    AUD: { sk: "Austrália", en: "Australia", de: "Australien" },
+    USD: { sk: "USA", en: "USA", de: "USA" },
+    CAD: { sk: "Kanada", en: "Canada", de: "Kanada" },
+    CZK: { sk: "Česko", en: "Czechia", de: "Tschechien" },
+    GBP: { sk: "Veľká Británia", en: "United Kingdom", de: "Vereinigtes Königreich" },
+    HUF: { sk: "Maďarsko", en: "Hungary", de: "Ungarn" },
+    CHF: { sk: "Švajčiarsko", en: "Switzerland", de: "Schweiz" },
+    PLN: { sk: "Poľsko", en: "Poland", de: "Polen" },
+    RON: { sk: "Rumunsko", en: "Romania", de: "Rumänien" },
+    BGN: { sk: "Bulharsko", en: "Bulgaria", de: "Bulgarien" },
+    DKK: { sk: "Dánsko", en: "Denmark", de: "Dänemark" },
+    SEK: { sk: "Švédsko", en: "Sweden", de: "Schweden" },
+    NOK: { sk: "Nórsko", en: "Norway", de: "Norwegen" },
   };
+  const countryName = (code) => COUNTRIES[code]?.[currentLang] || "";
 
   // Ukážkové dáta — zobrazia sa, kým nie je napojený reálny Google Sheet.
   // Konvencia: koľko jednotiek cudzej meny dostanete za 1 EUR.
@@ -728,9 +1022,12 @@
 
   // Posledné načítané kurzy — kalkulačka nižšie z nich vždy počíta.
   let latestRates = [];
+  let lastIsDemo = true;
 
   function renderRates(rates, isDemo) {
     latestRates = rates;
+    lastIsDemo = isDemo;
+    const t = I18N[currentLang];
     const body = document.getElementById("rates-body");
     body.innerHTML = "";
     rates.forEach(r => {
@@ -739,7 +1036,7 @@
         <td>
           <span class="currency">
             <span class="code">${r.code}</span>
-            <span class="country">${COUNTRIES[r.code] || ""}</span>
+            <span class="country">${countryName(r.code)}</span>
           </span>
         </td>
         <td class="num buy">${formatNumber(r.buy)}</td>
@@ -753,9 +1050,9 @@
     });
 
     const now = new Date().toLocaleString("sk-SK");
-    const badge = isDemo ? '<span class="demo-badge">ukážkové dáta</span>' : "";
+    const badge = isDemo ? `<span class="demo-badge">${t.demoBadge}</span>` : "";
     document.getElementById("last-updated").innerHTML =
-      `Aktualizované: ${now}${badge}`;
+      `${t.updated(now)}${badge}`;
 
     populateCalcCurrencies();
     updateCalculator();
@@ -768,7 +1065,7 @@
     const select = document.getElementById("calc-currency");
     const prevValue = select.value;
     select.innerHTML = latestRates
-      .map(r => `<option value="${r.code}">${r.code} — ${COUNTRIES[r.code] || ""}</option>`)
+      .map(r => `<option value="${r.code}">${r.code} — ${countryName(r.code)}</option>`)
       .join("");
     if (latestRates.some(r => r.code === prevValue)) {
       select.value = prevValue;
@@ -776,6 +1073,7 @@
   }
 
   function updateCalculator() {
+    const t = I18N[currentLang];
     const amount = parseFloat(document.getElementById("calc-amount").value);
     const code = document.getElementById("calc-currency").value;
     const mode = document.querySelector(".calc-toggle button.active")?.dataset.mode || "buy";
@@ -787,7 +1085,7 @@
 
     // "Chcem eurá" → zadávate sumu, ktorú MÁTE v cudzej mene.
     // "Chcem cudziu menu" → zadávate sumu, ktorú CHCETE dostať v cudzej mene.
-    document.getElementById("calc-amount-label").textContent = mode === "buy" ? "Mám" : "Chcem";
+    document.getElementById("calc-amount-label").textContent = mode === "buy" ? t.labelHave : t.labelWant;
 
     feeDetail.textContent = `${FEE_PERCENT} %`;
 
@@ -801,11 +1099,11 @@
     let eur;
     if (mode === "buy") {
       eur = amount / rate.buy;
-      helper.textContent = `Toľko EUR dostanete za ${formatNumber(amount)} ${code}.`;
+      helper.textContent = t.helperBuy(formatNumber(amount), code);
       rateDetail.textContent = `1 EUR = ${formatNumber(rate.buy)} ${code}`;
     } else {
       eur = amount / rate.sell;
-      helper.textContent = `Toľko EUR zaplatíte za ${formatNumber(amount)} ${code}.`;
+      helper.textContent = t.helperSell(formatNumber(amount), code);
       rateDetail.textContent = `1 EUR = ${formatNumber(rate.sell)} ${code}`;
     }
     output.textContent = eur.toLocaleString("sk-SK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -819,6 +1117,66 @@
       btn.classList.add("active");
       updateCalculator();
     });
+  });
+
+  // ---------------------------------------------------------------
+  // PREPÍNAČ JAZYKA — prepíše všetok statický text podľa I18N vyššie.
+  // ---------------------------------------------------------------
+  function applyLanguage(lang) {
+    if (!I18N[lang]) return;
+    currentLang = lang;
+    try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (e) { /* iframe bez prístupu k localStorage */ }
+
+    const t = I18N[lang];
+    document.documentElement.lang = lang;
+    document.title = t.pageTitle;
+
+    document.querySelectorAll(".lang-btn").forEach(b => b.classList.toggle("active", b.dataset.lang === lang));
+
+    document.getElementById("fee-badge").textContent = t.feeBadge;
+    document.getElementById("hours-static").textContent = t.hours;
+    document.getElementById("th-currency").textContent = t.thCurrency;
+    document.getElementById("th-buy").innerHTML = t.thBuy;
+    document.getElementById("th-sell").innerHTML = t.thSell;
+    document.getElementById("th-change").textContent = t.thChange;
+    document.getElementById("calc-title").textContent = t.calcTitle;
+    document.getElementById("calc-mode-buy").textContent = t.modeBuy;
+    document.getElementById("calc-mode-sell").textContent = t.modeSell;
+    document.getElementById("calc-amount").setAttribute("aria-label", t.amountAria);
+    document.getElementById("calc-currency").setAttribute("aria-label", t.currencyAria);
+    document.getElementById("calc-rate-label").textContent = t.rateLabel;
+    document.getElementById("calc-fee-label").textContent = t.feeLabel;
+    document.getElementById("why-us-1").textContent = t.whyUs[0];
+    document.getElementById("why-us-2").textContent = t.whyUs[1];
+    document.getElementById("why-us-3").textContent = t.whyUs[2];
+    document.getElementById("faq-title").textContent = t.faqTitle;
+    document.getElementById("faq-q1").textContent = t.faqQ1;
+    document.getElementById("faq-a1").textContent = t.faqA1;
+    document.getElementById("faq-q2").textContent = t.faqQ2;
+    document.getElementById("faq-a2").textContent = t.faqA2;
+    document.getElementById("notice-id").textContent = t.noticeId;
+    document.getElementById("notice-notes").textContent = t.noticeNotes;
+    document.getElementById("locate-title").textContent = t.locateTitle;
+    document.getElementById("locate-caption").innerHTML = t.locateCaption;
+    document.getElementById("map-corridor").textContent = t.mapCorridor;
+    document.getElementById("map-entrance-1").textContent = t.mapSideEntrance[0];
+    document.getElementById("map-entrance-2").textContent = t.mapSideEntrance[1];
+    document.getElementById("map-us").textContent = t.mapUs;
+    document.getElementById("map-fee").textContent = t.mapFee;
+    document.querySelectorAll(".mall-lot").forEach(el => { el.textContent = t.parking; });
+    document.getElementById("facebook-link-text").textContent = t.facebook;
+
+    if (latestRates.length) {
+      renderRates(latestRates, lastIsDemo);
+    } else {
+      document.getElementById("last-updated").textContent = t.loading;
+    }
+    renderStatus();
+    updateCalculator();
+  }
+
+  document.querySelectorAll(".lang-btn").forEach(btn => {
+    btn.addEventListener("click", () => applyLanguage(btn.dataset.lang));
   });
 
   async function fetchRates() {
@@ -853,6 +1211,8 @@
       renderRates(DEMO_RATES, true);
     }
   }
+
+  applyLanguage(currentLang); // nastaví statické texty (aj tak, ako boli uložené z minulej návštevy)
 
   fetchRates();
   setInterval(fetchRates, CONFIG.REFRESH_INTERVAL_MS);
