@@ -270,6 +270,77 @@
     min-width: 280px;
     overflow-x: auto;
   }
+
+  .locate {
+    margin: 0 20px 20px;
+    padding: 16px;
+    background: rgba(18, 32, 58, 0.03);
+    border: 1px solid var(--paper-line);
+    border-radius: 12px;
+  }
+  .locate-caption {
+    margin: 0 0 14px;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+  }
+  .locate-caption strong { color: var(--ink); }
+  .mall-map { overflow-x: auto; }
+  .mall-dir {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 6px;
+    min-width: 620px;
+  }
+  .mall-row {
+    display: flex;
+    gap: 6px;
+    min-width: 620px;
+  }
+  .mall-row + .mall-row { margin-top: 6px; }
+  .mall-unit {
+    flex: 1 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 10px;
+    background: #fff;
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-align: center;
+    white-space: nowrap;
+  }
+  .mall-gap { flex: 1.4 0 auto; border: none; background: none; }
+  .mall-corridor {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+    min-width: 620px;
+    color: var(--muted);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .mall-corridor::before, .mall-corridor::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: repeating-linear-gradient(90deg, var(--paper-line) 0 6px, transparent 6px 10px);
+  }
+  .mall-unit--us {
+    background: var(--lg-red);
+    border-color: var(--lg-red);
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 0 0 4px rgba(226, 35, 26, 0.14);
+  }
   table {
     width: 100%;
     border-collapse: collapse;
@@ -429,6 +500,40 @@
           <div class="calc-details">
             <span>Kurz: <strong id="calc-rate-detail">—</strong></span>
             <span>Poplatok: <strong id="calc-fee-detail">—</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="locate">
+        <p class="calc-title">Kde nás nájdete</p>
+        <p class="locate-caption">
+          Prízemie OC Laugaricio, chodba medzi <strong>Dr. Max</strong> a
+          <strong>VÚB bankou</strong> (oproti Lidlu).
+        </p>
+        <div class="mall-map">
+          <div class="mall-dir">
+            <span>← Smer centrum Trenčín</span>
+            <span>Smer letisko Trenčín →</span>
+          </div>
+          <div class="mall-row">
+            <div class="mall-unit">Tatra banka</div>
+            <div class="mall-unit">Tchibo</div>
+            <div class="mall-unit">EXIsport</div>
+            <div class="mall-gap"></div>
+            <div class="mall-unit">Planeo</div>
+            <div class="mall-unit">Intersport</div>
+          </div>
+          <div class="mall-corridor">chodba</div>
+          <div class="mall-row">
+            <div class="mall-unit">Starbucks</div>
+            <div class="mall-unit">iSTYLE</div>
+            <div class="mall-gap"></div>
+            <div class="mall-unit">VÚB banka</div>
+            <div class="mall-unit">DM drogerie</div>
+            <div class="mall-unit">Panta Rhei</div>
+            <div class="mall-unit">Dr. Max</div>
+            <div class="mall-unit mall-unit--us">📍 Zmenáreň</div>
+            <div class="mall-unit">Lidl</div>
           </div>
         </div>
       </div>
