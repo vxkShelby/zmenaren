@@ -29,7 +29,7 @@
     font-family: 'Work Sans', Arial, sans-serif;
   }
   .board {
-    max-width: 640px;
+    max-width: 920px;
     margin: 0 auto;
     padding: 20px 16px 28px;
   }
@@ -150,8 +150,17 @@
     margin-top: 2px;
   }
 
+  .content-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 0 20px 20px;
+  }
   .calc {
-    margin: 4px 20px 20px;
+    flex: 1 1 260px;
+    min-width: 240px;
+    margin: 0;
     padding: 16px;
     background: rgba(18, 32, 58, 0.03);
     border: 1px solid var(--paper-line);
@@ -173,13 +182,14 @@
   }
   .calc-toggle button {
     flex: 1;
-    padding: 7px 6px;
+    padding: 7px 5px;
     border-radius: 8px;
     border: 1px solid var(--paper-line);
     background: #fff;
     font-family: 'Work Sans', sans-serif;
     font-weight: 600;
-    font-size: 0.82rem;
+    font-size: 0.76rem;
+    line-height: 1.25;
     color: var(--ink-soft);
     cursor: pointer;
   }
@@ -255,7 +265,11 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .table-wrap { overflow-x: auto; }
+  .table-wrap {
+    flex: 2 1 380px;
+    min-width: 280px;
+    overflow-x: auto;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
@@ -382,38 +396,40 @@
         <p class="subtitle">Koľko cudzej meny dostanete za 1 EUR</p>
       </header>
 
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Mena</th>
-              <th class="num">Nakupujeme</th>
-              <th class="num">Predávame</th>
-              <th class="num">Zmena</th>
-            </tr>
-          </thead>
-          <tbody id="rates-body">
-            <!-- riadky sa vkladajú automaticky cez JS nižšie -->
-          </tbody>
-        </table>
-      </div>
+      <div class="content-row">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Mena</th>
+                <th class="num">Nakupujeme</th>
+                <th class="num">Predávame</th>
+                <th class="num">Zmena</th>
+              </tr>
+            </thead>
+            <tbody id="rates-body">
+              <!-- riadky sa vkladajú automaticky cez JS nižšie -->
+            </tbody>
+          </table>
+        </div>
 
-      <div class="calc">
-        <p class="calc-title">Kalkulačka</p>
-        <div class="calc-toggle">
-          <button type="button" class="active" data-mode="buy" id="calc-mode-buy">Chcem eurá</button>
-          <button type="button" data-mode="sell" id="calc-mode-sell">Chcem cudziu menu</button>
-        </div>
-        <p class="calc-label" id="calc-amount-label">Mám</p>
-        <div class="calc-row">
-          <input type="number" id="calc-amount" value="100" min="0" step="any" inputmode="decimal" aria-label="Suma">
-          <select id="calc-currency" aria-label="Mena"></select>
-        </div>
-        <div class="calc-result"><span id="calc-output">—</span><span class="eur-label">EUR</span></div>
-        <p class="calc-helper" id="calc-helper"></p>
-        <div class="calc-details">
-          <span>Kurz: <strong id="calc-rate-detail">—</strong></span>
-          <span>Poplatok: <strong id="calc-fee-detail">—</strong></span>
+        <div class="calc">
+          <p class="calc-title">Kalkulačka</p>
+          <div class="calc-toggle">
+            <button type="button" class="active" data-mode="buy" id="calc-mode-buy">Chcem eurá</button>
+            <button type="button" data-mode="sell" id="calc-mode-sell">Chcem cudziu menu</button>
+          </div>
+          <p class="calc-label" id="calc-amount-label">Mám</p>
+          <div class="calc-row">
+            <input type="number" id="calc-amount" value="100" min="0" step="any" inputmode="decimal" aria-label="Suma">
+            <select id="calc-currency" aria-label="Mena"></select>
+          </div>
+          <div class="calc-result"><span id="calc-output">—</span><span class="eur-label">EUR</span></div>
+          <p class="calc-helper" id="calc-helper"></p>
+          <div class="calc-details">
+            <span>Kurz: <strong id="calc-rate-detail">—</strong></span>
+            <span>Poplatok: <strong id="calc-fee-detail">—</strong></span>
+          </div>
         </div>
       </div>
 

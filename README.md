@@ -189,9 +189,13 @@ HTML blok) na stránku Zmenáreň:
 ```html
 <iframe
   src="https://<username>.github.io/zmenaren/"
-  style="width:100%; max-width:640px; height:520px; border:0; display:block; margin:0 auto;"
+  style="width:100%; max-width:920px; height:900px; border:0; display:block; margin:0 auto;"
   title="Aktuálny kurzový lístok — Zmenáreň OC Laugaricio">
 </iframe>
 ```
 
-(Výšku `520px` doladíme podľa reálneho obsahu, keď bude nasadené.)
+Stránka je responzívna — pri šírke iframu nad ~660px sa kalkulačka zobrazí
+vedľa tabuľky, pod touto hranicou sa sama poskladá pod tabuľku (mobil).
+Odporúčaná max. šírka `920px` je len horný strop, iframe môže byť aj užší.
+(Výšku `900px` doladíme podľa reálneho obsahu, keď bude nasadené — v širokom
+layoute je nižšia, v úzkom/mobilnom vyššia kvôli poskladaniu pod seba.)
