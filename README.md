@@ -117,15 +117,17 @@ tu v repozitári, GitHub to automaticky nasadí, iframe to hneď zobrazí.
 
 - [x] `index.html` — vizuál kurzového lístka, s ukážkovými dátami kým nie je
       napojený Google Sheet (bezpečné na náhľad hneď teraz)
-- [x] `watcher/update-rates.ps1` — kostra watchera, reaguje na zmenu súboru
-      (nie na časovač); **parsovacia časť čaká na vzorku exportu z Monetky**
+- [x] `watcher/update-rates.ps1` — watcher hotový vrátane zápisu do Google
+      Sheetu (`Write-RatesToGoogleSheet` cez service account JWT);
+      **parsovacia časť (`Parse-MonetkaExport`) čaká na vzorku exportu**
 - [x] Zapnúť GitHub Pages pre tento repozitár — **hotovo, živé na
       https://vxkshelby.github.io/zmenaren/** (repozitár bolo treba
       najprv zverejniť — GitHub Pages na súkromnom repozitári vyžaduje
       platený plán). Zatiaľ nasadené z branchu
       `claude/code-sync-across-devices-fyd65x`, nie `main` — pozn. nižšie.
-- [ ] Vzorka `.txt` exportu z Monetky → doplní sa parser
-- [ ] Vytvoriť Google Sheet + Google Cloud service account (zápis do hárku)
+- [ ] Vytvoriť Google Sheet (krok 1 nižšie) + Google Cloud service account
+      (krok 2 nižšie) — obe treba spraviť ty, keďže vyžadujú tvoj Google účet
+- [ ] Vzorka `.txt` exportu z Monetky → doplní sa parser (krok 3 nižšie)
 - [ ] Poslať vedeniu OC Laugaricio embed kód (nižšie)
 
 ## Čo treba doplniť — krok za krokom
@@ -166,11 +168,38 @@ Zdieľať ho ako **"Ktokoľvek s odkazom — Zobrazovať"**, nech ho `index.html
 vie čítať. ID hárku (z URL) sa potom doplní do `CONFIG.SHEET_ID`
 v `index.html` a do `$SpreadsheetId` v `watcher/update-rates.ps1`.
 
-### 2. Google Cloud service account (na zápis z watchera)
-Jednorazové nastavenie v Google Cloud Console — vytvoriť projekt, zapnúť
-Google Sheets API, vytvoriť service account a stiahnuť JSON kľúč. Tento účet
-sa potom pridá ako editor k Google Sheetu z kroku 1. Toto doplníme spolu,
-keď bude parser hotový.
+### 2. Google Cloud service account (na zápis z watchera) — hotovo v kóde ✅
+Zápisová časť (`Write-RatesToGoogleSheet` v `watcher/update-rates.ps1`) je už
+naprogramovaná — funguje bez ohľadu na to, aký formát nakoniec bude mať
+Monetka export (to sa doplní do `Parse-MonetkaExport` samostatne, viď krok 3).
+Aby fungovala, treba raz nastaviť service account v Google Cloud Console —
+je to bezplatné, žiadna platobná karta sa nevyžaduje:
+
+1. Choď na **console.cloud.google.com** → hore vytvor nový projekt (napr.
+   "zmenaren-watcher").
+2. V hľadaní hore napíš **"Google Sheets API"** → otvor ju → **Enable**.
+3. V ľavom menu **APIs & Services → Credentials** → **Create Credentials**
+   → **Service account**. Zadaj ľubovoľné meno (napr. "zmenaren-writer") →
+   **Create and continue** → **Done** (role netreba riešiť, pridáme ho
+   priamo k Sheetu v kroku nižšie).
+4. Klikni na novovytvorený service account → záložka **Keys** → **Add key**
+   → **Create new key** → typ **JSON** → **Create**. Stiahne sa `.json`
+   súbor — **toto je jediný krok, kde vzniká tajný kľúč**, nedá sa stiahnuť
+   druhýkrát (dá sa len vytvoriť nový).
+5. Súbor premenuj podľa potreby a ulož na PC v predajni presne na cestu,
+   akú má `$ServiceAccountKeyPath` v `update-rates.ps1` (predvolene
+   `C:\zmenaren-watcher\service-account.json`). **Tento súbor sa nikdy
+   nedáva do GitHub repozitára** (je to citlivý prístupový kľúč).
+6. V tom JSON súbore nájdeš pole `"client_email"` (vyzerá ako
+   `xxxxx@zmenaren-watcher.iam.gserviceaccount.com`) — tento e-mail pridaj
+   ako **Editor** (zdieľať) priamo do Google Sheetu z kroku 1 (rovnako, ako
+   by si zdieľal Sheet s kolegom).
+
+Skript na zápis vyžaduje **PowerShell 7+** (kvôli podpisovaniu prístupu
+k Google) — treba ho na PC v predajni nainštalovať z
+[aka.ms/powershell](https://aka.ms/powershell) (bezplatné, funguje popri
+existujúcej Windows PowerShell 5.1 bez konfliktu) a skript spúšťať príkazom
+`pwsh update-rates.ps1`, nie cez staršie `powershell.exe`.
 
 ### 3. Vzorka exportu z Monetky
 Potrebné, aby sa dala doplniť funkcia `Parse-MonetkaExport` v
