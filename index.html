@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kurzový lístok – Zmenáreň OC Laugaricio</title>
+<style>
+  :root {
+    --navy: #0b2545;
+    --navy-light: #13355e;
+    --gold: #c9a24b;
+    --bg: #f4f6f9;
+    --text: #1c2b3a;
+    --muted: #6b7a8d;
+    --up: #1e8e5a;
+    --down: #c0392b;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', Arial, sans-serif;
+  }
+  .board {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 16px 28px;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  header h1 {
+    font-size: 1.4rem;
+    margin: 0 0 4px;
+    color: var(--navy);
+  }
+  header .subtitle {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(11, 37, 69, 0.08);
+  }
+  thead tr {
+    background: var(--navy);
+  }
+  thead th {
+    color: #fff;
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  thead th.num, tbody td.num {
+    text-align: right;
+  }
+  tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eceff3;
+    font-size: 1rem;
+  }
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+  tbody tr:nth-child(even) {
+    background: #fafbfc;
+  }
+  .currency {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+  }
+  .flag {
+    font-size: 1.2rem;
+  }
+  .unit {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 0.85rem;
+  }
+  .buy { color: var(--up); font-weight: 600; }
+  .sell { color: var(--down); font-weight: 600; }
+  footer {
+    margin-top: 14px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  footer .demo-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #fdf1d8;
+    color: #8a6a1a;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .contact {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--navy);
+  }
+  .contact strong { color: var(--navy); }
+</style>
+</head>
+<body>
+  <div class="board">
+    <header>
+      <h1>Zmenáreň OC Laugaricio</h1>
+      <p class="subtitle">Aktuálny kurzový lístok</p>
+    </header>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Mena</th>
+          <th class="num">Jednotka</th>
+          <th class="num">Nákup</th>
+          <th class="num">Predaj</th>
+        </tr>
+      </thead>
+      <tbody id="rates-body">
+        <!-- riadky sa vkladajú automaticky cez JS nižšie -->
+      </tbody>
+    </table>
+
+    <footer>
+      <span id="last-updated">Načítavam kurzy…</span>
+    </footer>
+
+    <div class="contact">
+      <strong>OC Laugaricio</strong> · PO–NE 10:00–19:00<br>
+      T: 0918 460 559, 0908 481 927
+    </div>
+  </div>
+
+<script>
+  // ---------------------------------------------------------------
+  // KONFIGURÁCIA — doplniť po vytvorení Google Sheetu s kurzami.
+  // Pokiaľ SHEET_ID ostane prázdne, stránka zobrazuje ukážkové dáta.
+  // ---------------------------------------------------------------
+  const CONFIG = {
+    SHEET_ID: "",        // TODO: ID Google Sheetu (z jeho URL)
+    SHEET_NAME: "Kurzy",  // TODO: názov hárku s kurzami
+    REFRESH_INTERVAL_MS: 60000, // ako často si stránka overí nové dáta (60s)
+  };
+
+  const FLAGS = {
+    USD: "🇺🇸", CZK: "🇨🇿", PLN: "🇵🇱", HUF: "🇭🇺",
+    GBP: "🇬🇧", CHF: "🇨🇭", NOK: "🇳🇴", SEK: "🇸🇪",
+    DKK: "🇩🇰", RON: "🇷🇴", BGN: "🇧🇬", RUB: "🇷🇺",
+    UAH: "🇺🇦", HRK: "🇭🇷",
+  };
+
+  // Ukážkové dáta — zobrazia sa, kým nie je napojený reálny Google Sheet.
+  const DEMO_RATES = [
+    { code: "USD", unit: 1,   buy: 1.070, sell: 1.055 },
+    { code: "CZK", unit: 100, buy: 4.020, sell: 3.940 },
+    { code: "PLN", unit: 1,   buy: 0.234, sell: 0.228 },
+    { code: "HUF", unit: 100, buy: 0.252, sell: 0.245 },
+    { code: "GBP", unit: 1,   buy: 1.180, sell: 1.155 },
+    { code: "CHF", unit: 1,   buy: 1.045, sell: 1.020 },
+  ];
+
+  function formatNumber(n) {
+    const num = Number(n);
+    if (Number.isNaN(num)) return "—";
+    return num.toLocaleString("sk-SK", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  }
+
+  function renderRates(rates, isDemo) {
+    const body = document.getElementById("rates-body");
+    body.innerHTML = "";
+    rates.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>
+          <span class="currency">
+            <span class="flag">${FLAGS[r.code] || "💱"}</span>
+            ${r.code}
+          </span>
+        </td>
+        <td class="num unit">${r.unit}</td>
+        <td class="num buy">${formatNumber(r.buy)}</td>
+        <td class="num sell">${formatNumber(r.sell)}</td>
+      `;
+      body.appendChild(tr);
+    });
+
+    const now = new Date().toLocaleString("sk-SK");
+    const badge = isDemo ? '<span class="demo-badge">ukážkové dáta</span>' : "";
+    document.getElementById("last-updated").innerHTML =
+      `Aktualizované: ${now}${badge}`;
+  }
+
+  async function fetchRates() {
+    if (!CONFIG.SHEET_ID) {
+      renderRates(DEMO_RATES, true);
+      return;
+    }
+    try {
+      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}`;
+      const res = await fetch(url, { cache: "no-store" });
+      const text = await res.text();
+      const jsonText = text.substring(text.indexOf("(") + 1, text.lastIndexOf(")"));
+      const data = JSON.parse(jsonText);
+
+      // Očakávaný formát riadkov v hárku: Mena | Jednotka | Nákup | Predaj
+      const rates = data.table.rows
+        .map(row => ({
+          code: row.c[0]?.v,
+          unit: row.c[1]?.v,
+          buy: row.c[2]?.v,
+          sell: row.c[3]?.v,
+        }))
+        .filter(r => r.code);
+
+      renderRates(rates.length ? rates : DEMO_RATES, rates.length === 0);
+    } catch (err) {
+      console.error("Nepodarilo sa načítať kurzy z Google Sheetu:", err);
+      renderRates(DEMO_RATES, true);
+    }
+  }
+
+  fetchRates();
+  setInterval(fetchRates, CONFIG.REFRESH_INTERVAL_MS);
+</script>
+</body>
+</html>
