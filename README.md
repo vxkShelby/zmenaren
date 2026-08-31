@@ -40,12 +40,20 @@ tu v repozitári, GitHub to automaticky nasadí, iframe to hneď zobrazí.
 ## Čo treba doplniť — krok za krokom
 
 ### 1. Google Sheet
-Vytvoriť Google Sheet s hárkom (napr. `Kurzy`) v tvare:
+Vytvoriť Google Sheet s hárkom (napr. `Kurzy`) v tvare — riadok pre každú
+obchodovanú menu (základná mena je EUR, tá sa neuvádza ako riadok):
 
 | Mena | Jednotka | Nákup | Predaj |
 |------|----------|-------|--------|
+| AUD  | 1        | 0.600 | 0.580  |
 | USD  | 1        | 1.070 | 1.055  |
+| CAD  | 1        | 0.760 | 0.740  |
 | CZK  | 100      | 4.020 | 3.940  |
+| GBP  | 1        | 1.180 | 1.155  |
+| HUF  | 100      | 0.252 | 0.245  |
+| CHF  | 1        | 1.045 | 1.020  |
+| PLN  | 1        | 0.234 | 0.228  |
+| RON  | 1        | 0.200 | 0.192  |
 
 Zdieľať ho ako **"Ktokoľvek s odkazom — Zobrazovať"**, nech ho `index.html`
 vie čítať. ID hárku (z URL) sa potom doplní do `CONFIG.SHEET_ID`

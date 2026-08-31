@@ -116,13 +116,25 @@
     color: var(--navy);
   }
   .contact strong { color: var(--navy); }
+  .social-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    color: var(--navy-light);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .social-link:hover { text-decoration: underline; }
+  .social-link svg { width: 16px; height: 16px; fill: currentColor; }
 </style>
 </head>
 <body>
   <div class="board">
     <header>
       <h1>Zmenáreň OC Laugaricio</h1>
-      <p class="subtitle">Aktuálny kurzový lístok</p>
+      <p class="subtitle">Aktuálny kurzový lístok · kurzy voči EUR</p>
     </header>
 
     <table>
@@ -146,6 +158,11 @@
     <div class="contact">
       <strong>OC Laugaricio</strong> · PO–NE 10:00–19:00<br>
       T: 0918 460 559, 0908 481 927
+      <br>
+      <a class="social-link" href="https://www.facebook.com/zmenarentrencin/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.89h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94Z"/></svg>
+        Zmenáreň Trenčín na Facebooku
+      </a>
     </div>
   </div>
 
@@ -160,21 +177,23 @@
     REFRESH_INTERVAL_MS: 60000, // ako často si stránka overí nové dáta (60s)
   };
 
+  // Meny, ktoré zmenáreň reálne obchoduje (základná mena je EUR).
   const FLAGS = {
-    USD: "🇺🇸", CZK: "🇨🇿", PLN: "🇵🇱", HUF: "🇭🇺",
-    GBP: "🇬🇧", CHF: "🇨🇭", NOK: "🇳🇴", SEK: "🇸🇪",
-    DKK: "🇩🇰", RON: "🇷🇴", BGN: "🇧🇬", RUB: "🇷🇺",
-    UAH: "🇺🇦", HRK: "🇭🇷",
+    AUD: "🇦🇺", USD: "🇺🇸", CAD: "🇨🇦", CZK: "🇨🇿",
+    GBP: "🇬🇧", HUF: "🇭🇺", CHF: "🇨🇭", PLN: "🇵🇱", RON: "🇷🇴",
   };
 
   // Ukážkové dáta — zobrazia sa, kým nie je napojený reálny Google Sheet.
   const DEMO_RATES = [
+    { code: "AUD", unit: 1,   buy: 0.600, sell: 0.580 },
     { code: "USD", unit: 1,   buy: 1.070, sell: 1.055 },
+    { code: "CAD", unit: 1,   buy: 0.760, sell: 0.740 },
     { code: "CZK", unit: 100, buy: 4.020, sell: 3.940 },
-    { code: "PLN", unit: 1,   buy: 0.234, sell: 0.228 },
-    { code: "HUF", unit: 100, buy: 0.252, sell: 0.245 },
     { code: "GBP", unit: 1,   buy: 1.180, sell: 1.155 },
+    { code: "HUF", unit: 100, buy: 0.252, sell: 0.245 },
     { code: "CHF", unit: 1,   buy: 1.045, sell: 1.020 },
+    { code: "PLN", unit: 1,   buy: 0.234, sell: 0.228 },
+    { code: "RON", unit: 1,   buy: 0.200, sell: 0.192 },
   ];
 
   function formatNumber(n) {
