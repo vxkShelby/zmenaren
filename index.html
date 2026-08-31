@@ -743,8 +743,7 @@
 
           <div class="info-notice">
             <p id="notice-id">Doklad totožnosti potrebný pri výmene nad 1 000 €.</p>
-            <p id="notice-notes">Neprijímame roztrhané, veľmi opotrebované ani staré (stiahnuté) série bankoviek.</p>
-            <p id="notice-old-usd">100-dolárové bankovky vydané pred rokom 2006 prijímame s poplatkom 1 %.</p>
+            <p id="notice-notes">Neprijímame neplatné bankovky.</p>
           </div>
         </div>
       </div>
@@ -922,10 +921,9 @@
       faqQ1: "Platba kartou?",
       faqA1: "Nie, vymieňame len v hotovosti.",
       faqQ2: "Vymieňate aj mince?",
-      faqA2: "Áno, ale len české mince — ostatné meny len v bankovkách.",
+      faqA2: "Áno, mince vymieňame v CZK, GBP, CHF, HUF, PLN a NOK — ostatné meny len v bankovkách.",
       noticeId: "Doklad totožnosti potrebný pri výmene nad 1 000 €.",
-      noticeNotes: "Neprijímame roztrhané, veľmi opotrebované ani staré (stiahnuté) série bankoviek.",
-      noticeOldUsd: "100-dolárové bankovky vydané pred rokom 2006 prijímame s poplatkom 1 %.",
+      noticeNotes: "Neprijímame neplatné bankovky.",
       locateTitle: "Kde nás nájdete",
       locateCaption: 'Prízemie OC Laugaricio — sme voľne stojaci stánok priamo v strede chodby (spolu so stánkom <strong>mBank</strong>), medzi <strong>VÚB bankou</strong> a <strong>Dr. Max</strong>.',
       mapAriaLabel: "Pôdorys OC Laugaricio s vyznačenou polohou zmenárne v chodbe",
@@ -971,10 +969,9 @@
       faqQ1: "Can I pay by card?",
       faqA1: "No, we only exchange cash.",
       faqQ2: "Do you exchange coins?",
-      faqA2: "Yes, but only Czech coins — other currencies in banknotes only.",
+      faqA2: "Yes, we exchange coins in CZK, GBP, CHF, HUF, PLN and NOK — other currencies in banknotes only.",
       noticeId: "ID required for exchanges over €1,000.",
-      noticeNotes: "We don't accept torn, heavily worn, or withdrawn banknote series.",
-      noticeOldUsd: "$100 banknotes issued before 2006 are accepted with a 1% fee.",
+      noticeNotes: "We don't accept invalid banknotes.",
       locateTitle: "Where to find us",
       locateCaption: 'Ground floor of OC Laugaricio — we\'re a free-standing stand right in the middle of the corridor (together with the <strong>mBank</strong> stand), between <strong>VÚB banka</strong> and <strong>Dr. Max</strong>.',
       mapAriaLabel: "Floor plan of OC Laugaricio showing the exchange office's location in the corridor",
@@ -1020,10 +1017,9 @@
       faqQ1: "Kann ich mit Karte zahlen?",
       faqA1: "Nein, wir wechseln nur Bargeld.",
       faqQ2: "Wechseln Sie auch Münzen?",
-      faqA2: "Ja, aber nur tschechische Münzen — andere Währungen nur in Banknoten.",
+      faqA2: "Ja, wir wechseln Münzen in CZK, GBP, CHF, HUF, PLN und NOK — andere Währungen nur in Banknoten.",
       noticeId: "Ausweis erforderlich bei einem Umtausch über 1.000 €.",
-      noticeNotes: "Wir akzeptieren keine zerrissenen, stark abgenutzten oder eingezogenen Banknotenserien.",
-      noticeOldUsd: "100-Dollar-Banknoten, die vor 2006 ausgegeben wurden, akzeptieren wir mit 1 % Gebühr.",
+      noticeNotes: "Wir akzeptieren keine ungültigen Banknoten.",
       locateTitle: "Wo Sie uns finden",
       locateCaption: 'Erdgeschoss von OC Laugaricio — wir sind ein freistehender Stand mitten im Gang (zusammen mit dem Stand <strong>mBank</strong>), zwischen <strong>VÚB banka</strong> und <strong>Dr. Max</strong>.',
       mapAriaLabel: "Grundriss von OC Laugaricio mit der Lage der Wechselstube im Gang",
@@ -1364,7 +1360,6 @@
     document.getElementById("faq-a2").textContent = t.faqA2;
     document.getElementById("notice-id").textContent = t.noticeId;
     document.getElementById("notice-notes").textContent = t.noticeNotes;
-    document.getElementById("notice-old-usd").textContent = t.noticeOldUsd;
     renderSeasonalTip();
     document.getElementById("locate-title").textContent = t.locateTitle;
     document.getElementById("locate-caption").innerHTML = t.locateCaption;
