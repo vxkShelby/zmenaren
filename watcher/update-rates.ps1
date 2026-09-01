@@ -113,7 +113,13 @@ function ConvertTo-Base64Url {
 function Get-GoogleAccessToken {
     param([string]$KeyPath)
 
+    if (-not (Test-Path $KeyPath)) {
+        throw "Súbor s kľúčom service accountu '$KeyPath' neexistuje. Skontroluj presnú cestu a názov súboru."
+    }
     $key = Get-Content $KeyPath -Raw | ConvertFrom-Json
+    if (-not $key.private_key -or $key.private_key -notmatch '-----BEGIN PRIVATE KEY-----') {
+        throw "Súbor '$KeyPath' sa načítal, ale pole 'private_key' je prázdne alebo poškodené (dĺžka: $($key.private_key.Length) znakov). Skús znova stiahnuť/uložiť JSON kľúč zo service accountu — nesmie sa preformátovať iným programom (napr. Word), len uložiť tak, ako je."
+    }
     $now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 
     $header = @{ alg = "RS256"; typ = "JWT" } | ConvertTo-Json -Compress
