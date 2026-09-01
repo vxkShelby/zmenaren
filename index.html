@@ -77,6 +77,38 @@
     border-color: var(--ink);
     color: var(--paper);
   }
+  .board-toolbar-left {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    z-index: 2;
+  }
+  .text-size-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--paper-line);
+    background: #fff;
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .text-size-btn.active {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .text-size-icon {
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+  .text-size-btn span:last-child {
+    font-size: 0.72rem;
+    letter-spacing: 0.01em;
+  }
   /* Väčšina veľkostí písma je v rem, takže zväčšenie koreňového font-size
      stačí na to, aby "veľký text" režim zväčšil celý widget naraz. */
   html.text-large { font-size: 19px; }
@@ -438,6 +470,21 @@
     font-weight: 600;
     color: var(--ink-soft);
   }
+  .print-link-btn {
+    margin-left: auto;
+    padding: 0;
+    border: none;
+    background: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.74rem;
+    color: var(--lg-red);
+    cursor: pointer;
+  }
+  .print-link-btn:hover { text-decoration: underline; }
   .rates-freshness-dot {
     flex: 0 0 auto;
     width: 6px;
@@ -632,10 +679,18 @@
     body { background: #fff; }
     .board { max-width: 100%; margin: 0; padding: 0; }
     .board-card { box-shadow: none; border: none; border-radius: 0; }
-    .board-toolbar, .calc, .why-us, .seasonal-tip, .mini-faq, .locate, .rates-freshness, .fetch-error-banner { display: none; }
-    .content-row { padding: 0 12px 12px; }
+    .board-toolbar, .board-toolbar-left, .calc, .why-us, .seasonal-tip, .mini-faq, .locate, .rates-freshness, .fetch-error-banner { display: none; }
+    .content-row { padding: 0 12px 12px; gap: 8px; }
     .table-wrap { flex-basis: 100%; }
-    table { font-size: 0.9rem; }
+    .side-column { gap: 6px; }
+    header { padding: 10px 20px 8px; }
+    header h1 { font-size: 1.5rem; }
+    .phone-cta { padding: 5px 14px; font-size: 0.9rem; }
+    table { font-size: 0.85rem; }
+    thead th { padding: 7px 10px; }
+    tbody td { padding: 7px 10px; font-size: 0.85rem; }
+    .info-notice { padding: 8px 10px; font-size: 0.68rem; }
+    footer, .contact { padding-top: 4px; padding-bottom: 4px; }
   }
 </style>
 </head>
@@ -643,9 +698,13 @@
   <div class="board">
     <div class="board-card">
       <div class="accent-bar" aria-hidden="true"><span></span><span></span></div>
+      <div class="board-toolbar-left">
+        <button type="button" class="text-size-btn" id="text-size-toggle" aria-pressed="false">
+          <span class="text-size-icon" aria-hidden="true">A+</span>
+          <span id="text-size-label">Väčšie písmo</span>
+        </button>
+      </div>
       <div class="board-toolbar">
-        <button type="button" class="lang-btn" id="print-btn" aria-label="Tlačiť">🖨</button>
-        <button type="button" class="lang-btn" id="text-size-toggle" aria-pressed="false" aria-label="Väčšie písmo">A+</button>
         <div class="lang-switch" role="group" aria-label="Jazyk / Language / Sprache">
           <button type="button" class="lang-btn active" data-lang="sk" aria-pressed="true">SK</button>
           <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
@@ -681,13 +740,14 @@
           <div class="rates-freshness">
             <span class="rates-freshness-dot" aria-hidden="true"></span>
             <span id="rates-updated-top">—</span>
+            <button type="button" class="print-link-btn" id="print-btn">🖨 <span id="print-btn-label">Vytlačiť kurzy</span></button>
           </div>
           <table>
             <thead>
               <tr>
                 <th id="th-currency" scope="col">Mena</th>
-                <th class="num" id="th-buy" scope="col">Nakupujeme<br>za 1€</th>
-                <th class="num" id="th-sell" scope="col">Predávame<br>za 1€</th>
+                <th class="num" id="th-buy" scope="col">Nakupujeme<br>kurzom za 1€</th>
+                <th class="num" id="th-sell" scope="col">Predávame<br>kurzom za 1€</th>
                 <th class="num" id="th-week" scope="col">Týždeň</th>
               </tr>
             </thead>
@@ -910,8 +970,8 @@
       opensAt: (t) => `Otvárame o ${t}`,
       closesAt: (t) => `Zatvárame o ${t}`,
       thCurrency: "Mena",
-      thBuy: "Nakupujeme<br>za 1€",
-      thSell: "Predávame<br>za 1€",
+      thBuy: "Nakupujeme<br>kurzom za 1€",
+      thSell: "Predávame<br>kurzom za 1€",
       thWeek: "Týždeň",
       calcTitle: "Kalkulačka",
       modeBuy: "Chcem eurá",
@@ -921,8 +981,8 @@
       amountAria: "Suma",
       currencyAria: "Mena",
       quickAmountsAria: "Rýchle sumy",
-      printAria: "Tlačiť",
-      textSizeAria: "Väčšie písmo",
+      printLabel: "Vytlačiť kurzy",
+      textSizeLabel: "Väčšie písmo",
       rateLabel: "Kurz:",
       feeLabel: "Poplatok:",
       helperBuy: (amount, code) => `Toľko EUR dostanete za ${amount} ${code}.`,
@@ -970,8 +1030,8 @@
       amountAria: "Amount",
       currencyAria: "Currency",
       quickAmountsAria: "Quick amounts",
-      printAria: "Print",
-      textSizeAria: "Larger text",
+      printLabel: "Print rates",
+      textSizeLabel: "Larger text",
       rateLabel: "Rate:",
       feeLabel: "Fee:",
       helperBuy: (amount, code) => `You'll receive this much EUR for ${amount} ${code}.`,
@@ -1019,8 +1079,8 @@
       amountAria: "Betrag",
       currencyAria: "Währung",
       quickAmountsAria: "Schnellbeträge",
-      printAria: "Drucken",
-      textSizeAria: "Größere Schrift",
+      printLabel: "Kurse drucken",
+      textSizeLabel: "Größere Schrift",
       rateLabel: "Kurs:",
       feeLabel: "Gebühr:",
       helperBuy: (amount, code) => `So viel EUR erhalten Sie für ${amount} ${code}.`,
@@ -1287,12 +1347,18 @@
     });
 
     const now = lastSourceTimestamp || new Date();
-    const nowFull = now.toLocaleString("sk-SK");
-    const nowTime = now.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit" });
+    // Dátum aj čas na oboch miestach (nad tabuľkou aj v pätičke) — samotný
+    // čas bez dátumu mohol pôsobiť zavádzajúco (napr. deň po tom, čo sa
+    // kurzy naposledy reálne zmenili, "Aktualizované: 11:32" vyzeralo ako
+    // dnešná aktualizácia).
+    const nowFull = now.toLocaleString("sk-SK", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
     const badge = isDemo ? `<span class="demo-badge">${t.demoBadge}</span>` : "";
     document.getElementById("last-updated").innerHTML =
       `${t.updated(nowFull)}${badge}`;
-    document.getElementById("rates-updated-top").textContent = t.updated(nowTime);
+    document.getElementById("rates-updated-top").textContent = t.updated(nowFull);
 
     populateCalcCurrencies();
     updateCalculator();
@@ -1406,8 +1472,8 @@
     document.getElementById("calc-amount").setAttribute("aria-label", t.amountAria);
     document.getElementById("calc-currency").setAttribute("aria-label", t.currencyAria);
     document.getElementById("calc-quick").setAttribute("aria-label", t.quickAmountsAria);
-    document.getElementById("print-btn").setAttribute("aria-label", t.printAria);
-    document.getElementById("text-size-toggle").setAttribute("aria-label", t.textSizeAria);
+    document.getElementById("print-btn-label").textContent = t.printLabel;
+    document.getElementById("text-size-label").textContent = t.textSizeLabel;
     document.getElementById("calc-rate-label").textContent = t.rateLabel;
     document.getElementById("calc-fee-label").textContent = t.feeLabel;
     document.getElementById("why-us-1").textContent = t.whyUs[0];
