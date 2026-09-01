@@ -223,6 +223,13 @@ $action = {
 
 Register-ObjectEvent $watcher "Changed" -Action $action | Out-Null
 Register-ObjectEvent $watcher "Created" -Action $action | Out-Null
+# Niektoré programy zapíšu export najprv pod iným menom/dočasným súborom a až
+# potom ho premenujú na finálny názov — to sa hlási ako "Renamed", nie
+# "Changed"/"Created", preto ho treba sledovať tiež.
+Register-ObjectEvent $watcher "Renamed" -Action $action | Out-Null
+Register-ObjectEvent $watcher "Error" -Action {
+    Write-Warning "Chyba pri sledovaní priečinka: $($EventArgs.GetException().Message)"
+} | Out-Null
 
 Write-Host "Watcher beží. Nechaj toto okno otvorené (alebo nastav ako službu/naplánovanú úlohu)."
 while ($true) { Start-Sleep -Seconds 3600 }
