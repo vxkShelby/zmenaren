@@ -688,6 +688,7 @@
                 <th id="th-currency" scope="col">Mena</th>
                 <th class="num" id="th-buy" scope="col">Nakupujeme<br>za 1€</th>
                 <th class="num" id="th-sell" scope="col">Predávame<br>za 1€</th>
+                <th class="num" id="th-week" scope="col">Týždeň</th>
               </tr>
             </thead>
             <tbody id="rates-body">
@@ -843,6 +844,7 @@
   const CONFIG = {
     SHEET_ID: "19eNa65B_kWDJVdm5vUAcr42v4GoWZNabtgpjE0zLjgA",
     SHEET_NAME: "Kurzy",  // TODO: názov hárku s kurzami
+    HISTORY_SHEET_NAME: "History", // denné históriové dáta pre stĺpec "Týždeň" (zapisuje watcher)
     REFRESH_INTERVAL_MS: 60000, // ako často si stránka overí nové dáta (60s)
   };
 
@@ -914,7 +916,7 @@
       thCurrency: "Mena",
       thBuy: "Nakupujeme<br>za 1€",
       thSell: "Predávame<br>za 1€",
-      thChange: "Zmena",
+      thWeek: "Týždeň",
       calcTitle: "Kalkulačka",
       modeBuy: "Chcem eurá",
       modeSell: "Chcem cudziu menu",
@@ -963,7 +965,7 @@
       thCurrency: "Currency",
       thBuy: "We buy<br>per 1€",
       thSell: "We sell<br>per 1€",
-      thChange: "Change",
+      thWeek: "Week",
       calcTitle: "Calculator",
       modeBuy: "I want euros",
       modeSell: "I want foreign currency",
@@ -1012,7 +1014,7 @@
       thCurrency: "Währung",
       thBuy: "Wir kaufen<br>pro 1€",
       thSell: "Wir verkaufen<br>pro 1€",
-      thChange: "Änderung",
+      thWeek: "Woche",
       calcTitle: "Rechner",
       modeBuy: "Ich möchte Euro",
       modeSell: "Ich möchte Fremdwährung",
@@ -1169,7 +1171,10 @@
   // Konvencia: koľko jednotiek cudzej meny dostanete za 1 EUR.
   // "Nakupujeme" je vždy vyššie číslo ako "Predávame" (zmenáreň si tak
   // necháva maržu) — presne ako v reálnom príklade: CZK 24,80 / 23,50.
-  // prevBuy/prevSell = hodnoty pred poslednou zmenou kurzu (na výpočet stĺpca "Zmena").
+  // prevBuy/prevSell = hodnoty pred poslednou zmenou kurzu (momentálne sa
+  // nikde nezobrazujú, ponechané pre prípadné budúce použitie). Stĺpec
+  // "Týždeň" v ukážkových dátach ostáva prázdny ("–") — bez napojenia na
+  // hárok "History" nie je čo zobraziť.
   const DEMO_RATES = [
     { code: "AUD", buy: 1.680,  sell: 1.620,  prevBuy: 1.665,  prevSell: 1.605 },
     { code: "USD", buy: 1.100,  sell: 1.060,  prevBuy: 1.100,  prevSell: 1.060 },
@@ -1238,6 +1243,28 @@
   // v Sheete) — nie čas, kedy si to stránka naposledy sama stiahla.
   let lastSourceTimestamp = null;
 
+  // Denné históriové dáta (kód meny → zoradený zoznam { date, buy, sell }),
+  // z hárku "History", ktorý si watcher sám vytvorí a raz denne doň pridá
+  // záznam pre každú menu. Slúži na stĺpec "Týždeň" (zmena za posledných 7 dní).
+  let latestHistory = {};
+
+  // Nájde v histórii danej meny záznam spred (aspoň) 7 dní — najbližší
+  // dostupný na/pred cieľovým dátumom. Kým watcher nebeží aspoň týždeň (alebo
+  // pri chybe načítania histórie), vráti null a stĺpec ukáže "–" namiesto
+  // toho, aby klamlivo porovnával napr. len 2 dni staré dáta ako "týždeň".
+  function getWeekAgoValue(code) {
+    const list = latestHistory[code];
+    if (!list || !list.length) return null;
+    const target = new Date();
+    target.setDate(target.getDate() - 7);
+    const targetStr = target.toISOString().slice(0, 10);
+    let candidate = null;
+    for (const entry of list) {
+      if (entry.date <= targetStr) candidate = entry;
+    }
+    return candidate;
+  }
+
   function renderRates(rates, isDemo, sourceTimestamp) {
     latestRates = rates;
     lastIsDemo = isDemo;
@@ -1247,6 +1274,8 @@
     body.innerHTML = "";
     rates.forEach(r => {
       const tr = document.createElement("tr");
+      const weekAgo = getWeekAgoValue(r.code);
+      const weekCell = weekAgo ? renderDelta(r.buy, weekAgo.buy) : '<span class="delta delta-flat">–</span>';
       tr.innerHTML = `
         <td>
           <span class="currency">
@@ -1256,6 +1285,7 @@
         </td>
         <td class="num buy">${formatRate(r.buy)}</td>
         <td class="num sell">${formatRate(r.sell)}</td>
+        <td class="num week">${weekCell}</td>
       `;
       body.appendChild(tr);
     });
@@ -1373,6 +1403,7 @@
     document.getElementById("th-currency").textContent = t.thCurrency;
     document.getElementById("th-buy").innerHTML = t.thBuy;
     document.getElementById("th-sell").innerHTML = t.thSell;
+    document.getElementById("th-week").textContent = t.thWeek;
     document.getElementById("calc-title").textContent = t.calcTitle;
     document.getElementById("calc-mode-buy").textContent = t.modeBuy;
     document.getElementById("calc-mode-sell").textContent = t.modeSell;
@@ -1426,11 +1457,48 @@
   });
   document.getElementById("print-btn").addEventListener("click", () => window.print());
 
+  // Načíta hárok "History" (dátum, kód, nákup, predaj — jeden riadok na menu
+  // a deň, pridáva ho watcher raz denne) pre stĺpec "Týždeň". Zámerne
+  // nekritické: kým hárok ešte neexistuje (watcher ho vytvorí sám pri prvom
+  // spustení po nasadení tejto funkcie), alebo pri akejkoľvek chybe, len sa
+  // ticho nezobrazí týždňová zmena — hlavná tabuľka s kurzami tým nie je
+  // ovplyvnená.
+  async function fetchHistory() {
+    if (!CONFIG.SHEET_ID) return;
+    try {
+      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.HISTORY_SHEET_NAME)}`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(url, { cache: "no-store", signal: controller.signal });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error(`História fetch zlyhal so stavom ${res.status}`);
+      const text = await res.text();
+      const jsonText = text.substring(text.indexOf("(") + 1, text.lastIndexOf(")"));
+      const data = JSON.parse(jsonText);
+
+      const byCode = {};
+      (data.table.rows || []).forEach(row => {
+        const date = String(row.c[0]?.v ?? "").trim();
+        const code = String(row.c[1]?.v ?? "").trim().toUpperCase();
+        if (!date || !code) return;
+        const buy = Number(row.c[2]?.v);
+        const sell = Number(row.c[3]?.v);
+        if (!byCode[code]) byCode[code] = [];
+        byCode[code].push({ date, buy, sell });
+      });
+      Object.values(byCode).forEach(list => list.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)));
+      latestHistory = byCode;
+    } catch (err) {
+      console.error("Nepodarilo sa načítať históriu kurzov (stĺpec 'Týždeň'):", err);
+    }
+  }
+
   async function fetchRates() {
     if (!CONFIG.SHEET_ID) {
       renderRates(DEMO_RATES, true);
       return;
     }
+    const historyPromise = fetchHistory(); // beží súbežne, nekritické (viď catch vyššie)
     try {
       const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}`;
       // Timeout, aby stránka pri zaseknutej mall WiFi nečakala na fetch donekonečna,
@@ -1447,7 +1515,9 @@
       // Očakávaný formát riadkov v hárku:
       // Mena | Nakupujeme | Predávame | Nakup. predch. | Predaj predch.
       // (koľko jednotiek cudzej meny dostanete za 1 EUR; posledné dva stĺpce
-      // sú hodnoty pred poslednou zmenou kurzu, na výpočet stĺpca "Zmena")
+      // sú hodnoty pred poslednou zmenou kurzu — momentálne sa nikde
+      // nezobrazujú, "Týždeň" nižšie počíta zmenu z hárku "History", nie z
+      // týchto dvoch stĺpcov, no ponechávame ich pre prípadné budúce použitie)
       //
       // Watcher navyše zapisuje osobitný riadok "LAST_UPDATE" (čas skutočnej
       // poslednej zmeny kurzu z Monetky) — ten sa tu vyčlení a použije namiesto
@@ -1485,6 +1555,7 @@
 
       lastFetchFailed = false;
       document.getElementById("fetch-error-banner").hidden = true;
+      await historyPromise;
       renderRates(rates.length ? rates : DEMO_RATES, rates.length === 0, sourceTimestamp);
     } catch (err) {
       console.error("Nepodarilo sa načítať kurzy z Google Sheetu:", err);

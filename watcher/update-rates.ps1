@@ -28,6 +28,11 @@ $ServiceAccountKeyPath = "C:\zmenaren-watcher\service-account.json"
 $SpreadsheetId = "19eNa65B_kWDJVdm5vUAcr42v4GoWZNabtgpjE0zLjgA"
 $SheetName     = "Kurzy"
 
+# Hárok s dennou históriou kurzov (Dátum | Kód | Nákup | Predaj) — po jednom
+# riadku na menu a deň, watcher si ho pri prvom spustení sám vytvorí, ak ešte
+# neexistuje. Používa ho stránka na stĺpec "Týždeň" (zmena za posledných 7 dní).
+$HistorySheetName = "History"
+
 # Priečinok, kam Monetka exportuje kurzový lístok, a presný názov súboru.
 $WatchFolder   = "C:\DatalockHotel\MonetkaEuro\Zmenaren\Import"
 $WatchFilter   = "ExportKL.txt"
@@ -177,6 +182,56 @@ function Get-GoogleAccessToken {
     return $tokenResponse.access_token
 }
 
+# Overí, či hárok "History" v tabuľke existuje, a ak nie, sám ho vytvorí
+# (aj s hlavičkovým riadkom) — nech to majiteľka nemusí nikdy ručne robiť
+# v Google Sheets.
+function Ensure-HistorySheetExists {
+    param([hashtable]$Headers)
+    $metaUrl = "https://sheets.googleapis.com/v4/spreadsheets/${SpreadsheetId}?fields=sheets.properties.title"
+    $meta = Invoke-RestMethod -Uri $metaUrl -Headers $Headers -Method Get
+    $exists = $meta.sheets | Where-Object { $_.properties.title -eq $HistorySheetName }
+    if ($exists) { return }
+
+    $addBody = @{ requests = @(@{ addSheet = @{ properties = @{ title = $HistorySheetName } } }) } | ConvertTo-Json -Depth 6
+    $addUrl = "https://sheets.googleapis.com/v4/spreadsheets/${SpreadsheetId}:batchUpdate"
+    Invoke-RestMethod -Uri $addUrl -Headers $Headers -Method Post -Body $addBody -ContentType "application/json" | Out-Null
+
+    $headerRange = "$HistorySheetName!A1:D1"
+    $headerUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($headerRange))?valueInputOption=RAW"
+    $headerBody = @{ values = @(, @("Date", "Code", "Buy", "Sell")) } | ConvertTo-Json -Depth 4
+    Invoke-RestMethod -Uri $headerUrl -Headers $Headers -Method Put -Body $headerBody -ContentType "application/json" | Out-Null
+
+    Write-Log "Hárok '$HistorySheetName' v tabuľke ešte neexistoval — vytvorený automaticky."
+}
+
+# Vráti dátum (yyyy-MM-dd) posledného riadku v hárku "History", alebo $null,
+# ak je hárok ešte prázdny.
+function Get-HistoryLastDate {
+    param([hashtable]$Headers)
+    $range = "$HistorySheetName!A2:A"
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($range))?majorDimension=COLUMNS"
+    $resp = Invoke-RestMethod -Uri $url -Headers $Headers -Method Get
+    $col = $resp.values[0]
+    if ($col -and $col.Count -gt 0) { return $col[$col.Count - 1] }
+    return $null
+}
+
+# Pridá do hárku "History" jeden riadok na menu s dnešným dátumom — najviac
+# raz denne (viď volanie nižšie), nech stĺpec "Týždeň" na stránke má z čoho
+# počítať zmenu kurzu za posledných 7 dní.
+function Add-DailyHistorySnapshot {
+    param([array]$Rates, [hashtable]$Headers, [string]$DateText)
+    $rows = @()
+    foreach ($r in $Rates) {
+        $rows += , @($DateText, $r.code, $r.buy, $r.sell)
+    }
+    $appendRange = "$HistorySheetName!A:D"
+    $appendUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($appendRange)):append?valueInputOption=RAW&insertDataOption=INSERT_ROWS"
+    $body = @{ values = $rows } | ConvertTo-Json -Depth 6
+    Invoke-RestMethod -Uri $appendUrl -Headers $Headers -Method Post -Body $body -ContentType "application/json" | Out-Null
+    Write-Log "Denný záznam histórie pridaný pre $DateText ($($Rates.Count) mien)."
+}
+
 function Write-RatesToGoogleSheet {
     param([array]$Rates, [DateTime]$UpdateTimestampUtc = [DateTime]::UtcNow)
 
@@ -264,6 +319,24 @@ function Write-RatesToGoogleSheet {
     Invoke-RestMethod -Uri $lastUpdateUrl -Headers $headers -Method Put -Body $lastUpdateBody -ContentType "application/json" | Out-Null
 
     Write-Log "Zapísaných $($Rates.Count) kurzov do Google Sheetu."
+
+    # Raz denne (podľa LOKÁLNEHO dátumu — rovnaký deň, aký vidí človek v
+    # predajni) pridať aj snímku do hárku "History" pre stĺpec "Týždeň" na
+    # stránke. Ak sa kurzy v ten istý deň zmenia viackrát, zapíše sa len prvá
+    # zmena toho dňa — pre porovnanie "spred týždňa" to stačí, netreba
+    # ukladať každú jednotlivú zmenu.
+    try {
+        Ensure-HistorySheetExists -Headers $headers
+        $todayLocal = $UpdateTimestampUtc.ToLocalTime().ToString("yyyy-MM-dd")
+        $lastHistoryDate = Get-HistoryLastDate -Headers $headers
+        if ($lastHistoryDate -ne $todayLocal) {
+            Add-DailyHistorySnapshot -Rates $Rates -Headers $headers -DateText $todayLocal
+        }
+    } catch {
+        # Nekritické — hlavný zápis kurzov (vyššie) už prebehol úspešne, história
+        # pre stĺpec "Týždeň" je len doplnok. Nech prípadná chyba nezastaví watcher.
+        Write-Log "VAROVANIE: Nepodarilo sa zapísať dennú históriu (stĺpec 'Týždeň'): $_"
+    }
 }
 
 # Vypíše do konzoly (ak nejaká je) a zároveň pripíše do watcher.log — keď
