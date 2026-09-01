@@ -668,7 +668,7 @@
           0908 481 927
         </a>
         <div class="hours-row">
-          <span id="hours-static">PO–NE 10:00–19:00</span>
+          <span id="hours-static">PO–NE 9:30–19:00</span>
           <span class="status-pill" id="status-pill"><span class="dot"></span><span id="status-label">…</span></span>
         </div>
         <span class="status-note" id="status-note"></span>
@@ -854,7 +854,7 @@
   // ---------------------------------------------------------------
   // OTVÁRACIA DOBA — bežné hodiny (rovnaké každý deň PO–NE).
   // ---------------------------------------------------------------
-  const REGULAR_HOURS = { openMin: 10 * 60, closeMin: 19 * 60 };
+  const REGULAR_HOURS = { openMin: 9 * 60 + 30, closeMin: 19 * 60 };
   const CLOSING_SOON_MIN = 30; // posledných X minút pred zatvorením = "čoskoro zatvárame"
 
   // Dni, kedy má OC Laugaricio zatvorené — NIE každý štátny sviatok platí,
@@ -906,7 +906,7 @@
     sk: {
       pageTitle: "Kurzový lístok – Zmenáreň OC Laugaricio",
       feeBadge: "0 % poplatok za výmenu",
-      hours: "PO–NE 10:00–19:00",
+      hours: "PO–NE 9:30–19:00",
       statusOpen: "Otvorené",
       statusSoon: "Čoskoro zatvárame",
       statusClosed: "Zatvorené",
@@ -955,7 +955,7 @@
     en: {
       pageTitle: "Exchange Rates – Zmenáreň OC Laugaricio",
       feeBadge: "0% exchange fee",
-      hours: "Mon–Sun 10:00–19:00",
+      hours: "Mon–Sun 9:30–19:00",
       statusOpen: "Open",
       statusSoon: "Closing soon",
       statusClosed: "Closed",
@@ -1004,7 +1004,7 @@
     de: {
       pageTitle: "Wechselkurse – Zmenáreň OC Laugaricio",
       feeBadge: "0 % Wechselgebühr",
-      hours: "Mo–So 10:00–19:00",
+      hours: "Mo–So 9:30–19:00",
       statusOpen: "Geöffnet",
       statusSoon: "Bald geschlossen",
       statusClosed: "Geschlossen",
