@@ -1,8 +1,8 @@
 # ---------------------------------------------------------------------------
 # update-rates.ps1
 #
-# Sleduje priečinok, kam Monetka exportuje kurzový .txt súbor, a pri KAŽDEJ
-# zmene (nie na časovač) rozparsuje kurzy a zapíše ich do Google Sheetu,
+# Pravidelne kontroluje, či sa zmenil čas poslednej úpravy kurzového exportu
+# z Monetky, a pri zmene rozparsuje kurzy a zapíše ich do Google Sheetu,
 # odkiaľ si ich ťahá stránka index.html.
 #
 # STAV: hotovo — zápis do Google Sheetu aj parsovanie exportu z Monetky
@@ -31,6 +31,9 @@ $SheetName     = "Kurzy"
 # Priečinok, kam Monetka exportuje kurzový lístok, a presný názov súboru.
 $WatchFolder   = "C:\DatalockHotel\MonetkaEuro\Zmenaren\Import"
 $WatchFilter   = "ExportKL.txt"
+
+# Ako často (v sekundách) sa kontroluje, či sa súbor zmenil.
+$PollIntervalSeconds = 10
 
 # Rozparsuje kurzový lístok "ExportKL.txt" z Monetky. Reálna ukážka vyzerá takto:
 #
@@ -200,36 +203,36 @@ function Write-RatesToGoogleSheet {
     Write-Host "Zapísaných $($Rates.Count) kurzov do Google Sheetu."
 }
 
-Write-Host "Sledujem priečinok: $WatchFolder (filter: $WatchFilter)"
+$TargetFile = Join-Path $WatchFolder $WatchFilter
 
-$watcher = New-Object System.IO.FileSystemWatcher
-$watcher.Path = $WatchFolder
-$watcher.Filter = $WatchFilter
-$watcher.EnableRaisingEvents = $true
+Write-Host "Sledujem súbor: $TargetFile (kontrola každých $PollIntervalSeconds s.)"
+Write-Host "Watcher beží. Nechaj toto okno otvorené (alebo nastav ako naplánovanú úlohu)."
 
-$action = {
-    param($source, $eventArgs)
-    $path = $eventArgs.FullPath
-    Write-Host "Zmena zaznamenaná: $path"
+# Jednoduché a spoľahlivé riešenie: namiesto sledovania udalostí systému
+# súborov (FileSystemWatcher) — to sa dá pokaziť antivírusom, spôsobom akým
+# konkrétny program zapisuje súbor (dočasný súbor + premenovanie), alebo
+# sieťovým diskom — sa jednoducho v pravidelnom intervale pozrie, či sa zmenil
+# čas poslednej úpravy súboru. O pár sekúnd oneskorenia pri zmene kurzu nejde,
+# funguje to ale vždy a rovnako, nech Monetka zapisuje akokoľvek.
+$lastWriteTime = $null
+
+while ($true) {
     try {
-        Start-Sleep -Milliseconds 500  # počkať, kým Monetka dopíše súbor
-        $rates = Parse-MonetkaExport -FilePath $path
-        Write-RatesToGoogleSheet -Rates $rates
-        Write-Host "Kurzy aktualizované."
+        if (Test-Path $TargetFile) {
+            $currentWriteTime = (Get-Item $TargetFile).LastWriteTimeUtc
+            if ($null -eq $lastWriteTime -or $currentWriteTime -ne $lastWriteTime) {
+                $lastWriteTime = $currentWriteTime
+                Write-Host "Zmena zaznamenaná: $TargetFile ($currentWriteTime UTC)"
+                Start-Sleep -Milliseconds 500  # počkať, kým Monetka dopíše súbor
+                $rates = Parse-MonetkaExport -FilePath $TargetFile
+                Write-RatesToGoogleSheet -Rates $rates
+                Write-Host "Kurzy aktualizované."
+            }
+        } else {
+            Write-Warning "Súbor '$TargetFile' zatiaľ neexistuje."
+        }
     } catch {
         Write-Warning "Chyba pri spracovaní exportu: $_"
     }
+    Start-Sleep -Seconds $PollIntervalSeconds
 }
-
-Register-ObjectEvent $watcher "Changed" -Action $action | Out-Null
-Register-ObjectEvent $watcher "Created" -Action $action | Out-Null
-# Niektoré programy zapíšu export najprv pod iným menom/dočasným súborom a až
-# potom ho premenujú na finálny názov — to sa hlási ako "Renamed", nie
-# "Changed"/"Created", preto ho treba sledovať tiež.
-Register-ObjectEvent $watcher "Renamed" -Action $action | Out-Null
-Register-ObjectEvent $watcher "Error" -Action {
-    Write-Warning "Chyba pri sledovaní priečinka: $($EventArgs.GetException().Message)"
-} | Out-Null
-
-Write-Host "Watcher beží. Nechaj toto okno otvorené (alebo nastav ako službu/naplánovanú úlohu)."
-while ($true) { Start-Sleep -Seconds 3600 }
