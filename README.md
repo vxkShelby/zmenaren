@@ -128,10 +128,12 @@ tu v repozitári, GitHub to automaticky nasadí, iframe to hneď zobrazí.
 - [x] Google Sheet vytvorený a zdieľaný, `CONFIG.SHEET_ID` aj `$SpreadsheetId`
       doplnené — stránka naživo číta z neho (overené, "ukážkové dáta" štítok
       zmizol). Service account vytvorený, kľúč uložený na PC v predajni.
-- [x] Vzorka `.txt` exportu z Monetky (`ExportKL.txt`) → parser hotový
-      (krok 3 nižšie). **Watcher je teraz kompletný end-to-end** — treba ho
-      už len spustiť na PC v predajni (`pwsh update-rates.ps1`), ideálne
-      ako naplánovanú úlohu/službu, nech beží aj po reštarte PC.
+- [x] Vzorka `.txt` exportu z Monetky (`ExportKL.txt`) → parser hotový.
+      **Watcher je kompletný end-to-end a beží naživo v predajni** (overené
+      — reálne kurzy z Monetky sa objavujú na stránke).
+- [x] Automatický štart pri prihlásení do Windows (`install-watcher.ps1`,
+      naplánovaná úloha, beží skryto na pozadí) + Windows bublinkové
+      upozornenia pri úspešnom odoslaní/chybe + log súbor `watcher.log`.
 - [ ] Poslať vedeniu OC Laugaricio embed kód (nižšie) — **posledný krok**
 
 ## Čo treba doplniť — krok za krokom
@@ -236,6 +238,30 @@ riadok zapíšu tak, ako je (0/0) — `index.html` ho na stránke sám zobrazí 
 tabuli), len bez konkrétneho kurzu. Rovnaký princíp bude fungovať
 automaticky pre akúkoľvek ďalšiu menu, ktorú Monetka niekedy prestane
 obchodovať.
+
+### 3b. Automatický štart pri prihlásení + upozornenia — hotovo ✅
+Watcher sa už nemusí spúšťať ručne cez PowerShell (`pwsh update-rates.ps1`).
+Namiesto toho, **RAZ** (v priečinku `C:\zmenaren-watcher`, kde je aj
+`update-rates.ps1`) spusti:
+
+```
+pwsh .\install-watcher.ps1
+```
+
+Toto nastaví naplánovanú úlohu vo Windows (`ZmenarenWatcher`), ktorá odteraz
+spúšťa watcher automaticky pri každom prihlásení do Windows, na pozadí bez
+akéhokoľvek okna — netreba už nikdy nič ručne otvárať. Ak treba niečo zmeniť
+(napr. cestu k priečinku Monetky), stačí upraviť `update-rates.ps1` a
+`install-watcher.ps1` spustiť znova — naplánovanú úlohu len prepíše.
+
+**Windows upozornenia:** watcher teraz posiela bublinkové upozornenie pri
+paneli úloh — pri úspešnom odoslaní kurzov ("Kurzy boli úspešne odoslané…")
+aj pri chybe ("Kurzy sa nepodarilo aktualizovať…"). Dá sa to vypnúť
+nastavením `$ShowNotifications = $false` na začiatku `update-rates.ps1`.
+
+**Log súbor:** všetko, čo watcher robí (aj keď beží skryto na pozadí bez
+viditeľného okna), sa zapisuje do `C:\zmenaren-watcher\watcher.log` —
+užitočné, ak by bolo treba niečo spätne dohľadať.
 
 ### 4. GitHub Pages — hotovo ✅
 Živé na **https://vxkshelby.github.io/zmenaren/**. Repozitár musel byť najprv

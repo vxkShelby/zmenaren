@@ -35,6 +35,14 @@ $WatchFilter   = "ExportKL.txt"
 # Ako často (v sekundách) sa kontroluje, či sa súbor zmenil.
 $PollIntervalSeconds = 10
 
+# Súbor s priebežným záznamom (čo watcher robil/kedy) — užitočné najmä keď
+# beží skryto na pozadí (naplánovaná úloha), keď nevidno žiadne okno.
+$LogPath = Join-Path $PSScriptRoot "watcher.log"
+
+# Windows bublinkové upozornenia (pri úspešnom odoslaní kurzov aj pri chybe).
+# Nastav na $false, ak by boli nechcené/rušivé.
+$ShowNotifications = $true
+
 # Rozparsuje kurzový lístok "ExportKL.txt" z Monetky. Reálna ukážka vyzerá takto:
 #
 #   Marta Medvecká - MARTA S|01.09.2026 09:23:39
@@ -206,13 +214,51 @@ function Write-RatesToGoogleSheet {
     $batchUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values:batchUpdate"
     Invoke-RestMethod -Uri $batchUrl -Headers $headers -Method Post -Body $body -ContentType "application/json" | Out-Null
 
-    Write-Host "Zapísaných $($Rates.Count) kurzov do Google Sheetu."
+    Write-Log "Zapísaných $($Rates.Count) kurzov do Google Sheetu."
+}
+
+# Vypíše do konzoly (ak nejaká je) a zároveň pripíše do watcher.log — keď
+# beží skryto na pozadí, konzola nie je vidno, ale log súbor áno.
+function Write-Log {
+    param([string]$Message)
+    $line = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $Message"
+    Write-Host $line
+    try { Add-Content -Path $LogPath -Value $line -Encoding UTF8 } catch {}
+}
+
+# Windows bublinkové upozornenie pri paneli úloh. Ak beží skryto/bez
+# prihláseného pracovného stola, jednoducho sa ticho preskočí (nepadne).
+$script:NotifyIcon = $null
+function Show-Notification {
+    param(
+        [string]$Title,
+        [string]$Message,
+        [ValidateSet("Info", "Warning", "Error")] [string]$Type = "Info"
+    )
+    if (-not $ShowNotifications) { return }
+    try {
+        Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
+        Add-Type -AssemblyName System.Drawing -ErrorAction Stop
+        if (-not $script:NotifyIcon) {
+            $script:NotifyIcon = New-Object System.Windows.Forms.NotifyIcon
+            $script:NotifyIcon.Icon = [System.Drawing.SystemIcons]::Information
+            $script:NotifyIcon.Text = "Zmenáreň — watcher"
+            $script:NotifyIcon.Visible = $true
+        }
+        $script:NotifyIcon.BalloonTipIcon = $Type
+        $script:NotifyIcon.BalloonTipTitle = $Title
+        $script:NotifyIcon.BalloonTipText = $Message
+        $script:NotifyIcon.ShowBalloonTip(6000)
+    } catch {
+        # Notifikácie sa nedajú zobraziť (napr. beží bez prihláseného pracovného
+        # stola) — nevadí, log súbor aj tak zaznamená, čo sa stalo.
+    }
 }
 
 $TargetFile = Join-Path $WatchFolder $WatchFilter
 
-Write-Host "Sledujem súbor: $TargetFile (kontrola každých $PollIntervalSeconds s.)"
-Write-Host "Watcher beží. Nechaj toto okno otvorené (alebo nastav ako naplánovanú úlohu)."
+Write-Log "Sledujem súbor: $TargetFile (kontrola každých $PollIntervalSeconds s.)"
+Write-Log "Watcher beží."
 
 # Jednoduché a spoľahlivé riešenie: namiesto sledovania udalostí systému
 # súborov (FileSystemWatcher) — to sa dá pokaziť antivírusom, spôsobom akým
@@ -228,17 +274,19 @@ while ($true) {
             $currentWriteTime = (Get-Item $TargetFile).LastWriteTimeUtc
             if ($null -eq $lastWriteTime -or $currentWriteTime -ne $lastWriteTime) {
                 $lastWriteTime = $currentWriteTime
-                Write-Host "Zmena zaznamenaná: $TargetFile ($currentWriteTime UTC)"
+                Write-Log "Zmena zaznamenaná: $TargetFile ($currentWriteTime UTC)"
                 Start-Sleep -Milliseconds 500  # počkať, kým Monetka dopíše súbor
                 $rates = Parse-MonetkaExport -FilePath $TargetFile
                 Write-RatesToGoogleSheet -Rates $rates
-                Write-Host "Kurzy aktualizované."
+                Write-Log "Kurzy aktualizované ($($rates.Count) mien)."
+                Show-Notification -Title "Zmenáreň" -Message "Kurzy boli úspešne odoslané ($($rates.Count) mien)." -Type Info
             }
         } else {
-            Write-Warning "Súbor '$TargetFile' zatiaľ neexistuje."
+            Write-Log "VAROVANIE: Súbor '$TargetFile' zatiaľ neexistuje."
         }
     } catch {
-        Write-Warning "Chyba pri spracovaní exportu: $_"
+        Write-Log "CHYBA pri spracovaní exportu: $_"
+        Show-Notification -Title "Zmenáreň — chyba" -Message "Kurzy sa nepodarilo aktualizovať: $_" -Type Error
     }
     Start-Sleep -Seconds $PollIntervalSeconds
 }
