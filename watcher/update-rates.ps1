@@ -210,25 +210,23 @@ function Write-RatesToGoogleSheet {
         }
     }
 
+    $body = @{ valueInputOption = "USER_ENTERED"; data = $updates } | ConvertTo-Json -Depth 6
+    $batchUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values:batchUpdate"
+    Invoke-RestMethod -Uri $batchUrl -Headers $headers -Method Post -Body $body -ContentType "application/json" | Out-Null
+
     # Osobitný riadok s časom tejto (skutočnej) aktualizácie — na pevnom
     # riadku 20, s dostatočným odstupom od aktuálnych 12 mien, aby nekolidoval
     # ani pri pridaní pár ďalších mien do zoznamu. index.html ho vyčlení podľa
     # kódu "LAST_UPDATE" v stĺpci A a ukáže namiesto času vlastného fetchu,
     # nech "Aktualizované" na stránke ukazuje čas SKUTOČNEJ zmeny kurzu, nie
     # každé obnovenie stránky (tá si dáta ťahá každých 60 s, aj keď sa nič
-    # nezmenilo).
-    # Predsunutá "'" prinúti Google Sheets brať hodnotu ako čistý text (presne
-    # ako keď sa apostrof napíše ručne pred bunku v UI) — inak by si Sheets
-    # tento reťazec sám "chytro" preformátoval na dátum/čas podľa vlastného
-    # formátu, čo v bunke vyzerá zmätočne a nemusí sa dať spoľahlivo prečítať späť.
-    $updates += @{
-        range  = "$SheetName!A20:B20"
-        values = @(, @("LAST_UPDATE", "'" + [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")))
-    }
-
-    $body = @{ valueInputOption = "USER_ENTERED"; data = $updates } | ConvertTo-Json -Depth 6
-    $batchUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values:batchUpdate"
-    Invoke-RestMethod -Uri $batchUrl -Headers $headers -Method Post -Body $body -ContentType "application/json" | Out-Null
+    # nezmenilo). Samostatný zápis (nie súčasť dávky vyššie), nech je
+    # jednoduchý na odladenie. valueInputOption=RAW = uloží sa vždy presne ako
+    # čistý text, Google Sheets si to nebude "chytro" prekladať na dátum.
+    $lastUpdateRange = "$SheetName!A20:B20"
+    $lastUpdateUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($lastUpdateRange))?valueInputOption=RAW"
+    $lastUpdateBody = @{ values = @(, @("LAST_UPDATE", [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))) } | ConvertTo-Json -Depth 4
+    Invoke-RestMethod -Uri $lastUpdateUrl -Headers $headers -Method Put -Body $lastUpdateBody -ContentType "application/json" | Out-Null
 
     Write-Log "Zapísaných $($Rates.Count) kurzov do Google Sheetu."
 }
