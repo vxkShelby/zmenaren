@@ -117,9 +117,9 @@ tu v repozitári, GitHub to automaticky nasadí, iframe to hneď zobrazí.
 
 - [x] `index.html` — vizuál kurzového lístka, s ukážkovými dátami kým nie je
       napojený Google Sheet (bezpečné na náhľad hneď teraz)
-- [x] `watcher/update-rates.ps1` — watcher hotový vrátane zápisu do Google
-      Sheetu (`Write-RatesToGoogleSheet` cez service account JWT);
-      **parsovacia časť (`Parse-MonetkaExport`) čaká na vzorku exportu**
+- [x] `watcher/update-rates.ps1` — watcher kompletne hotový: zápis do
+      Google Sheetu (`Write-RatesToGoogleSheet`) aj parsovanie exportu
+      z Monetky (`Parse-MonetkaExport`, podľa vzorky `ExportKL.txt`)
 - [x] Zapnúť GitHub Pages pre tento repozitár — **hotovo, živé na
       https://vxkshelby.github.io/zmenaren/** (repozitár bolo treba
       najprv zverejniť — GitHub Pages na súkromnom repozitári vyžaduje
@@ -128,9 +128,11 @@ tu v repozitári, GitHub to automaticky nasadí, iframe to hneď zobrazí.
 - [x] Google Sheet vytvorený a zdieľaný, `CONFIG.SHEET_ID` aj `$SpreadsheetId`
       doplnené — stránka naživo číta z neho (overené, "ukážkové dáta" štítok
       zmizol). Service account vytvorený, kľúč uložený na PC v predajni.
-- [ ] Vzorka `.txt` exportu z Monetky → doplní sa parser (krok 3 nižšie) —
-      **posledný krok pred tým, než watcher začne kurzy zapisovať sám**
-- [ ] Poslať vedeniu OC Laugaricio embed kód (nižšie)
+- [x] Vzorka `.txt` exportu z Monetky (`ExportKL.txt`) → parser hotový
+      (krok 3 nižšie). **Watcher je teraz kompletný end-to-end** — treba ho
+      už len spustiť na PC v predajni (`pwsh update-rates.ps1`), ideálne
+      ako naplánovanú úlohu/službu, nech beží aj po reštarte PC.
+- [ ] Poslať vedeniu OC Laugaricio embed kód (nižšie) — **posledný krok**
 
 ## Čo treba doplniť — krok za krokom
 
@@ -207,13 +209,29 @@ k Google) — treba ho na PC v predajni nainštalovať z
 existujúcej Windows PowerShell 5.1 bez konfliktu) a skript spúšťať príkazom
 `pwsh update-rates.ps1`, nie cez staršie `powershell.exe`.
 
-### 3. Vzorka exportu z Monetky
-Potrebné, aby sa dala doplniť funkcia `Parse-MonetkaExport` v
-`watcher/update-rates.ps1` — hlavne oddeľovač stĺpcov, kódovanie
-(pravdepodobne Windows-1250) a presné poradie/formát hodnôt. Zároveň
-overíme, či Monetka exportuje kurzy v rovnakej konvencii ("cudzia mena za
-1 EUR", nákup > predaj) — ak nie, watcher pri zápise do Sheetu len
-prehodí/prepočíta stĺpce, na `index.html` sa nič meniť nemusí.
+### 3. Vzorka exportu z Monetky — hotovo ✅
+`Parse-MonetkaExport` je hotový podľa reálnej vzorky `ExportKL.txt`. Zhrnutie
+formátu (pre budúcu potrebu, keby sa export niekedy zmenil):
+
+- Súbor `C:\DatalockHotel\MonetkaEuro\Zmenaren\Import\ExportKL.txt`,
+  kódovanie **Windows-1250** (nie UTF-8).
+- Prvé dva riadky sú hlavička (meno pokladníka/čas, popis stĺpcov) — parser
+  ich preskočí, lebo dátové riadky rozoznáva podľa presne 3-písmenového kódu
+  meny na začiatku.
+- Stĺpce oddelené medzerami (rôzny počet, čísla zarovnané doprava): `Mena
+  Platnosť Nakup Predaj B.nak. B.pre. Stred Devizy`. Používajú sa len
+  `Nakup`/`Predaj`.
+- **Konvencia sedí 1:1 so stránkou** — Monetka aj `index.html` používajú
+  rovnaký smer (koľko jednotiek cudzej meny za 1 EUR, Nákup > Predaj), takže
+  sa nič neprehadzuje. Overené priamo na CZK riadku vzorky (24,80 / 23,50).
+- Všetkých 12 mien zo vzorky (USD, CAD, CHF, GBP, HUF, PLN, CZK, AUD, SEK,
+  RON, NOK, DKK) presne zodpovedá 12 menám, ktoré má `index.html`.
+
+**Jedna vec na overenie u teba:** vo vzorke mal riadok DKK `Nakup 1.000` a
+`Predaj 10.000` — teda opačne ako všetky ostatné meny (a ako to má byť).
+Parser to zapíše presne tak, ako je (s varovaním v logu), lebo to môže byť
+len preklep v tejto konkrétnej testovacej vzorke — over si v Monetke, či je
+kurz DKK zadaný správne, nech sa na stránke nezobrazí obrátene.
 
 ### 4. GitHub Pages — hotovo ✅
 Živé na **https://vxkshelby.github.io/zmenaren/**. Repozitár musel byť najprv

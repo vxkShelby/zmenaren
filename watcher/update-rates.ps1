@@ -5,10 +5,9 @@
 # zmene (nie na časovač) rozparsuje kurzy a zapíše ich do Google Sheetu,
 # odkiaľ si ich ťahá stránka index.html.
 #
-# STAV: zápisová časť (Write-RatesToGoogleSheet / Get-GoogleAccessToken) je
-# hotová. Parsovacia časť (Parse-MonetkaExport) je zámerne prázdna, kým
-# nemáme reálnu vzorku exportu z Monetky (formát stĺpcov, oddeľovač,
-# kódovanie) — doplní sa hneď ako vzorka príde.
+# STAV: hotovo — zápis do Google Sheetu aj parsovanie exportu z Monetky
+# (podľa vzorky "ExportKL.txt": kódovanie Windows-1250, stĺpce oddelené
+# medzerami, formát Mena/Platnosť/Nákup/Predaj/...).
 #
 # POŽIADAVKA: PowerShell 7+ (podpisovanie JWT cez RSA.ImportFromPem, ktoré
 # staršia Windows PowerShell 5.1 nemá). Skript sa spúšťa príkazom "pwsh", nie
@@ -29,24 +28,63 @@ $ServiceAccountKeyPath = "C:\zmenaren-watcher\service-account.json"
 $SpreadsheetId = "19eNa65B_kWDJVdm5vUAcr42v4GoWZNabtgpjE0zLjgA"
 $SheetName     = "Kurzy"
 
-# TODO: presná cesta k priečinku/súboru, kam Monetka exportuje kurzy
-$WatchFolder   = "C:\Monetka\Export"
-$WatchFilter   = "*.txt"
+# Priečinok, kam Monetka exportuje kurzový lístok, a presný názov súboru.
+$WatchFolder   = "C:\DatalockHotel\MonetkaEuro\Zmenaren\Import"
+$WatchFilter   = "ExportKL.txt"
 
+# Rozparsuje kurzový lístok "ExportKL.txt" z Monetky. Reálna ukážka vyzerá takto:
+#
+#   Marta Medvecká - MARTA S|01.09.2026 09:23:39
+#           Platnost   Nakup  Predaj  B.nak.  B.pre.   Stred  Devizy
+#   USD    120260901   1.196   1.125   1.000   1.000   1.000   1.000
+#   CZK    120260901  24.800  23.500   1.000   1.000   1.000   1.000
+#   ...
+#
+# Prvé dva riadky (meno pokladníka/čas, popis stĺpcov) sa jednoducho preskočia —
+# dátové riadky rozoznávame podľa toho, že prvé pole je presne 3-písmenový kód
+# meny. Stĺpce sú oddelené medzerami (nie tabulátorom/bodkočiarkou), počet
+# medzier sa líši (čísla sú zarovnané doprava na pevnú šírku), preto sa delí
+# jednoducho podľa ľubovoľného počtu medzier za sebou.
+#
+# Nakup/Predaj = presne "Nakupujeme"/"Predávame" na stránke — Monetka používa
+# rovnakú konvenciu (koľko jednotiek cudzej meny za 1 EUR, Nákup > Predaj),
+# stĺpce sa teda NEMUSIA prehadzovať. Overené na CZK riadku (24,80 / 23,50 —
+# presne reálny príklad z predajne).
+#
+# Súbor je vo Windows-1250 (nie UTF-8) — vidno to na "Medveck�" namiesto
+# "Medvecká" vo vzorke, keby sa čítal ako UTF-8.
 function Parse-MonetkaExport {
     param([string]$FilePath)
 
-    # TODO: doplniť po vzorke exportu. Očakávaný výstup — pole objektov:
-    # @{ code = "USD"; buy = 1.100; sell = 1.060 }, ...
-    # (buy/sell = koľko jednotiek danej meny dostanete za 1 EUR)
-    #
-    # Bežné veci na doriešiť podľa reálneho súboru:
-    #  - oddeľovač (tabulátor / bodkočiarka / čiarka / pevná šírka stĺpcov)
-    #  - kódovanie (často Windows-1250 pri slovenských/českých programoch)
-    #  - smer nákup/predaj — over, že v Monetke platí rovnaká konvencia
-    #    (nákup > predaj), inak tu stĺpce jednoducho prehodíme
+    try { [System.Text.Encoding]::RegisterProvider([System.Text.CodePagesEncodingProvider]::Instance) } catch {}
+    $encoding = [System.Text.Encoding]::GetEncoding(1250)
+    $bytes = [System.IO.File]::ReadAllBytes($FilePath)
+    $lines = $encoding.GetString($bytes) -split "`r?`n"
 
-    throw "Parse-MonetkaExport zatiaľ nie je implementované — čaká sa na vzorku exportu."
+    $rates = @()
+    foreach ($line in $lines) {
+        $line = $line.Trim()
+        if (-not $line) { continue }
+
+        $fields = $line -split '\s+'
+        if ($fields.Count -lt 4) { continue }
+        if ($fields[0] -notmatch '^[A-Za-z]{3}$') { continue }  # preskočí hlavičku/popis stĺpcov
+
+        $code = $fields[0].ToUpper()
+        $buy  = [double]::Parse($fields[2], [Globalization.CultureInfo]::InvariantCulture)
+        $sell = [double]::Parse($fields[3], [Globalization.CultureInfo]::InvariantCulture)
+
+        if ($buy -lt $sell) {
+            Write-Warning "$code`: Nakup ($buy) je nižšie ako Predaj ($sell) — over v Monetke, zvyčajne to má byť naopak. Zapisuje sa tak, ako je."
+        }
+
+        $rates += [PSCustomObject]@{ code = $code; buy = $buy; sell = $sell }
+    }
+
+    if ($rates.Count -eq 0) {
+        throw "V súbore '$FilePath' sa nenašiel žiadny platný riadok s kurzom."
+    }
+    return $rates
 }
 
 function ConvertTo-Base64Url {
