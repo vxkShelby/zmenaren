@@ -1234,10 +1234,14 @@
   // to je jediný prípad, kedy má zmysel ukázať nápadné upozornenie namiesto
   // len malého štítka "ukážkové dáta".
   let lastFetchFailed = false;
+  // Čas skutočnej poslednej zmeny kurzu (z watchera, cez riadok LAST_UPDATE
+  // v Sheete) — nie čas, kedy si to stránka naposledy sama stiahla.
+  let lastSourceTimestamp = null;
 
-  function renderRates(rates, isDemo) {
+  function renderRates(rates, isDemo, sourceTimestamp) {
     latestRates = rates;
     lastIsDemo = isDemo;
+    if (sourceTimestamp) { lastSourceTimestamp = sourceTimestamp; }
     const t = I18N[currentLang];
     const body = document.getElementById("rates-body");
     body.innerHTML = "";
@@ -1256,7 +1260,7 @@
       body.appendChild(tr);
     });
 
-    const now = new Date();
+    const now = lastSourceTimestamp || new Date();
     const nowFull = now.toLocaleString("sk-SK");
     const nowTime = now.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit" });
     const badge = isDemo ? `<span class="demo-badge">${t.demoBadge}</span>` : "";
@@ -1444,22 +1448,36 @@
       // Mena | Nakupujeme | Predávame | Nakup. predch. | Predaj predch.
       // (koľko jednotiek cudzej meny dostanete za 1 EUR; posledné dva stĺpce
       // sú hodnoty pred poslednou zmenou kurzu, na výpočet stĺpca "Zmena")
-      const rates = data.table.rows
-        .map(row => ({
-          // .trim().toUpperCase() — vlastník hárku môže omylom napísať kód
-          // meny malými písmenami alebo s medzerou navyše ("czk "); bez
-          // normalizácie by sa taký riadok tváril ako neznáma mena.
-          code: String(row.c[0]?.v ?? "").trim().toUpperCase(),
+      //
+      // Watcher navyše zapisuje osobitný riadok "LAST_UPDATE" (čas skutočnej
+      // poslednej zmeny kurzu z Monetky) — ten sa tu vyčlení a použije namiesto
+      // času vlastného fetchu, nech "Aktualizované" neukazuje každých 60 s
+      // nový čas, len keď sa kurzy naozaj zmenili.
+      const rates = [];
+      let sourceTimestamp = null;
+      data.table.rows.forEach(row => {
+        // .trim().toUpperCase() — vlastník hárku môže omylom napísať kód
+        // meny malými písmenami alebo s medzerou navyše ("czk "); bez
+        // normalizácie by sa taký riadok tváril ako neznáma mena.
+        const code = String(row.c[0]?.v ?? "").trim().toUpperCase();
+        if (code === "LAST_UPDATE") {
+          const parsed = new Date(row.c[1]?.v);
+          if (!Number.isNaN(parsed.getTime())) sourceTimestamp = parsed;
+          return;
+        }
+        if (!code) return;
+        rates.push({
+          code,
           buy: row.c[1]?.v,
           sell: row.c[2]?.v,
           prevBuy: row.c[3]?.v,
           prevSell: row.c[4]?.v,
-        }))
-        .filter(r => r.code);
+        });
+      });
 
       lastFetchFailed = false;
       document.getElementById("fetch-error-banner").hidden = true;
-      renderRates(rates.length ? rates : DEMO_RATES, rates.length === 0);
+      renderRates(rates.length ? rates : DEMO_RATES, rates.length === 0, sourceTimestamp);
     } catch (err) {
       console.error("Nepodarilo sa načítať kurzy z Google Sheetu:", err);
       lastFetchFailed = true;

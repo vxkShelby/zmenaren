@@ -210,6 +210,18 @@ function Write-RatesToGoogleSheet {
         }
     }
 
+    # Osobitný riadok s časom tejto (skutočnej) aktualizácie — na pevnom
+    # riadku 20, s dostatočným odstupom od aktuálnych 12 mien, aby nekolidoval
+    # ani pri pridaní pár ďalších mien do zoznamu. index.html ho vyčlení podľa
+    # kódu "LAST_UPDATE" v stĺpci A a ukáže namiesto času vlastného fetchu,
+    # nech "Aktualizované" na stránke ukazuje čas SKUTOČNEJ zmeny kurzu, nie
+    # každé obnovenie stránky (tá si dáta ťahá každých 60 s, aj keď sa nič
+    # nezmenilo).
+    $updates += @{
+        range  = "$SheetName!A20:B20"
+        values = @(, @("LAST_UPDATE", [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")))
+    }
+
     $body = @{ valueInputOption = "USER_ENTERED"; data = $updates } | ConvertTo-Json -Depth 6
     $batchUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values:batchUpdate"
     Invoke-RestMethod -Uri $batchUrl -Headers $headers -Method Post -Body $body -ContentType "application/json" | Out-Null
