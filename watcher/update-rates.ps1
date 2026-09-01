@@ -68,6 +68,13 @@ $ShowNotifications = $true
 # Meny, ktoré sa momentálne neobchodujú (napr. DKK), má Monetka v exporte
 # aj tak uvedené, ale s Nákup aj Predaj na 0 — také riadky sa zapíšu ako sú
 # (0/0), stránka si ich sama zobrazí ako "–" namiesto "0,00".
+#
+# Prvý riadok obsahuje aj čas, kedy Monetka kurzy naozaj vygenerovala
+# ("...|01.09.2026 09:23:39") — to je presnejší zdroj pravdy pre "Aktualizované"
+# na stránke ako čas súboru na disku (ten sa vie zmeniť aj bez zmeny kurzov)
+# alebo čas spracovania vo watchri (ten by sa falošne posunul pri každom
+# reštarte watchera). Vracia sa spolu s kurzami ako ExportTime — ak sa z
+# nejakého dôvodu nenájde/nedá rozobrať, volajúci použije čas súboru ako zálohu.
 function Parse-MonetkaExport {
     param([string]$FilePath)
 
@@ -77,9 +84,20 @@ function Parse-MonetkaExport {
     $lines = $encoding.GetString($bytes) -split "`r?`n"
 
     $rates = @()
+    $exportTime = $null
     foreach ($line in $lines) {
         $line = $line.Trim()
         if (-not $line) { continue }
+
+        if (-not $exportTime -and $line -match '\|(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2}):(\d{2})') {
+            try {
+                $exportTime = Get-Date -Year ([int]$Matches[3]) -Month ([int]$Matches[2]) -Day ([int]$Matches[1]) `
+                                        -Hour ([int]$Matches[4]) -Minute ([int]$Matches[5]) -Second ([int]$Matches[6])
+            } catch {
+                $exportTime = $null
+            }
+            continue
+        }
 
         $fields = $line -split '\s+'
         if ($fields.Count -lt 4) { continue }
@@ -108,7 +126,7 @@ function Parse-MonetkaExport {
     if ($rates.Count -eq 0) {
         throw "V súbore '$FilePath' sa nenašiel žiadny platný riadok s kurzom."
     }
-    return $rates
+    return [PSCustomObject]@{ Rates = $rates; ExportTime = $exportTime }
 }
 
 function ConvertTo-Base64Url {
@@ -160,7 +178,7 @@ function Get-GoogleAccessToken {
 }
 
 function Write-RatesToGoogleSheet {
-    param([array]$Rates)
+    param([array]$Rates, [DateTime]$UpdateTimestampUtc = [DateTime]::UtcNow)
 
     if (-not $SpreadsheetId) {
         Write-Warning "SpreadsheetId nie je nastavené — kurzy sa nezapíšu."
@@ -174,8 +192,12 @@ function Write-RatesToGoogleSheet {
     # Načítame CELÝ existujúci hárok a menu k riadku priradíme podľa stĺpca A
     # (kód meny) — nezávisí to teda od poradia, v akom Monetka kurzy exportuje,
     # ani od poradia riadkov v samotnom hárku.
+    # valueRenderOption=UNFORMATTED_VALUE — bez toho by Google vrátil čísla
+    # naformátované podľa jazyka hárku (napr. "1,683" ako TEXT), čo pri
+    # spätnom čítaní v PowerShelli (iné kultúrne nastavenie ako Sheet) mohlo
+    # zle interpretovať čiarku/bodku a "prehltnúť" desatinnú časť.
     $range = "$SheetName!A2:E1000"
-    $getUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($range))"
+    $getUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($range))?valueRenderOption=UNFORMATTED_VALUE"
     $existing = (Invoke-RestMethod -Uri $getUrl -Headers $headers -Method Get).values
     if (-not $existing) { $existing = @() }
 
@@ -220,12 +242,16 @@ function Write-RatesToGoogleSheet {
     # kódu "LAST_UPDATE" v stĺpci A a ukáže namiesto času vlastného fetchu,
     # nech "Aktualizované" na stránke ukazuje čas SKUTOČNEJ zmeny kurzu, nie
     # každé obnovenie stránky (tá si dáta ťahá každých 60 s, aj keď sa nič
-    # nezmenilo). Samostatný zápis (nie súčasť dávky vyššie), nech je
-    # jednoduchý na odladenie. valueInputOption=RAW = uloží sa vždy presne ako
-    # čistý text, Google Sheets si to nebude "chytro" prekladať na dátum.
+    # nezmenilo). $UpdateTimestampUtc je čas, kedy Monetka kurzy naozaj
+    # vygenerovala (z hlavičky exportu) — nie čas súboru na disku ani čas,
+    # kedy to watcher spracoval, aby sa "Aktualizované" falošne neposúvalo pri
+    # každom reštarte watchera. Samostatný zápis (nie súčasť dávky vyššie),
+    # nech je jednoduchý na odladenie. valueInputOption=RAW = uloží sa vždy
+    # presne ako čistý text, Google Sheets si to nebude "chytro" prekladať na
+    # dátum.
     $lastUpdateRange = "$SheetName!A20:B20"
     $lastUpdateUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($lastUpdateRange))?valueInputOption=RAW"
-    $lastUpdateBody = @{ values = @(, @("LAST_UPDATE", [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))) } | ConvertTo-Json -Depth 4
+    $lastUpdateBody = @{ values = @(, @("LAST_UPDATE", $UpdateTimestampUtc.ToString("yyyy-MM-ddTHH:mm:ssZ"))) } | ConvertTo-Json -Depth 4
     Invoke-RestMethod -Uri $lastUpdateUrl -Headers $headers -Method Put -Body $lastUpdateBody -ContentType "application/json" | Out-Null
 
     Write-Log "Zapísaných $($Rates.Count) kurzov do Google Sheetu."
@@ -304,12 +330,16 @@ while ($true) {
             if ($null -eq $lastWriteTime -or $currentWriteTime -ne $lastWriteTime) {
                 $lastWriteTime = $currentWriteTime
                 Start-Sleep -Milliseconds 500  # počkať, kým Monetka dopíše súbor
-                $rates = Parse-MonetkaExport -FilePath $TargetFile
+                $parsed = Parse-MonetkaExport -FilePath $TargetFile
+                $rates = $parsed.Rates
+                # Čas zo samotného exportu (Monetka) je spoľahlivejší než čas
+                # súboru — ak sa z nejakého dôvodu nenašiel, čas súboru je záloha.
+                $exportTimeUtc = if ($parsed.ExportTime) { $parsed.ExportTime.ToUniversalTime() } else { $currentWriteTime }
                 $snapshot = Get-RatesSnapshot -Rates $rates
 
                 if ($snapshot -ne $lastRatesSnapshot) {
-                    Write-Log "Zmena kurzov zaznamenaná: $TargetFile ($currentWriteTime UTC)"
-                    Write-RatesToGoogleSheet -Rates $rates
+                    Write-Log "Zmena kurzov zaznamenaná: $TargetFile (súbor: $currentWriteTime UTC, export: $exportTimeUtc UTC)"
+                    Write-RatesToGoogleSheet -Rates $rates -UpdateTimestampUtc $exportTimeUtc
                     $lastRatesSnapshot = $snapshot
                     Write-Log "Kurzy aktualizované ($($rates.Count) mien)."
                     Show-Notification -Title "Zmenáreň" -Message "Kurzy boli úspešne odoslané ($($rates.Count) mien)." -Type Info
