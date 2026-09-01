@@ -688,7 +688,6 @@
                 <th id="th-currency" scope="col">Mena</th>
                 <th class="num" id="th-buy" scope="col">Nakupujeme<br>za 1€</th>
                 <th class="num" id="th-sell" scope="col">Predávame<br>za 1€</th>
-                <th class="num" id="th-change" scope="col">Zmena</th>
               </tr>
             </thead>
             <tbody id="rates-body">
@@ -1189,7 +1188,8 @@
   function formatNumber(n) {
     const num = Number(n);
     if (Number.isNaN(num)) return "—";
-    return num.toLocaleString("sk-SK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // 3 desatinné miesta — rovnaká presnosť, akú exportuje Monetka.
+    return num.toLocaleString("sk-SK", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
   }
 
   // Pre bunky s kurzom v tabuľke: 0 (Monetka takto označuje menu, ktorú
@@ -1222,7 +1222,7 @@
     const arrow = diff > 0 ? "▲" : "▼";
     const cls = diff > 0 ? "delta-up" : "delta-down";
     const sign = diff > 0 ? "+" : "";
-    const value = sign + diff.toLocaleString("sk-SK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const value = sign + diff.toLocaleString("sk-SK", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
     return `<span class="delta ${cls}">${arrow} ${value}</span>`;
   }
 
@@ -1252,10 +1252,6 @@
         </td>
         <td class="num buy">${formatRate(r.buy)}</td>
         <td class="num sell">${formatRate(r.sell)}</td>
-        <td class="num change">
-          ${renderDelta(r.buy, r.prevBuy)}<br>
-          ${renderDelta(r.sell, r.prevSell)}
-        </td>
       `;
       body.appendChild(tr);
     });
@@ -1373,7 +1369,6 @@
     document.getElementById("th-currency").textContent = t.thCurrency;
     document.getElementById("th-buy").innerHTML = t.thBuy;
     document.getElementById("th-sell").innerHTML = t.thSell;
-    document.getElementById("th-change").textContent = t.thChange;
     document.getElementById("calc-title").textContent = t.calcTitle;
     document.getElementById("calc-mode-buy").textContent = t.modeBuy;
     document.getElementById("calc-mode-sell").textContent = t.modeSell;
