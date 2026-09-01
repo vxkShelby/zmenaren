@@ -272,6 +272,17 @@ function Show-Notification {
     }
 }
 
+# Zostaví jednoduchý "odtlačok" kurzov (kód+nákup+predaj pre každú menu,
+# zoradené), aby sa dalo spoľahlivo porovnať, či sa OBSAH naozaj zmenil —
+# nielen čas súboru. Monetka totiž vie export znova uložiť aj bez toho, aby
+# sa čokoľvek reálne zmenilo (napr. pravidelné automatické uloženie), a bez
+# tohto porovnania by watcher pri každom takom uložení zbytočne zapisoval do
+# Sheetu a "Aktualizované" na stránke by skákalo aj bez skutočnej zmeny kurzu.
+function Get-RatesSnapshot {
+    param([array]$Rates)
+    ($Rates | Sort-Object code | ForEach-Object { "$($_.code)=$($_.buy),$($_.sell)" }) -join ";"
+}
+
 $TargetFile = Join-Path $WatchFolder $WatchFilter
 
 Write-Log "Sledujem súbor: $TargetFile (kontrola každých $PollIntervalSeconds s.)"
@@ -284,6 +295,7 @@ Write-Log "Watcher beží."
 # čas poslednej úpravy súboru. O pár sekúnd oneskorenia pri zmene kurzu nejde,
 # funguje to ale vždy a rovnako, nech Monetka zapisuje akokoľvek.
 $lastWriteTime = $null
+$lastRatesSnapshot = $null
 
 while ($true) {
     try {
@@ -291,12 +303,19 @@ while ($true) {
             $currentWriteTime = (Get-Item $TargetFile).LastWriteTimeUtc
             if ($null -eq $lastWriteTime -or $currentWriteTime -ne $lastWriteTime) {
                 $lastWriteTime = $currentWriteTime
-                Write-Log "Zmena zaznamenaná: $TargetFile ($currentWriteTime UTC)"
                 Start-Sleep -Milliseconds 500  # počkať, kým Monetka dopíše súbor
                 $rates = Parse-MonetkaExport -FilePath $TargetFile
-                Write-RatesToGoogleSheet -Rates $rates
-                Write-Log "Kurzy aktualizované ($($rates.Count) mien)."
-                Show-Notification -Title "Zmenáreň" -Message "Kurzy boli úspešne odoslané ($($rates.Count) mien)." -Type Info
+                $snapshot = Get-RatesSnapshot -Rates $rates
+
+                if ($snapshot -ne $lastRatesSnapshot) {
+                    Write-Log "Zmena kurzov zaznamenaná: $TargetFile ($currentWriteTime UTC)"
+                    Write-RatesToGoogleSheet -Rates $rates
+                    $lastRatesSnapshot = $snapshot
+                    Write-Log "Kurzy aktualizované ($($rates.Count) mien)."
+                    Show-Notification -Title "Zmenáreň" -Message "Kurzy boli úspešne odoslané ($($rates.Count) mien)." -Type Info
+                } else {
+                    Write-Log "Súbor sa síce znova uložil, ale kurzy sú rovnaké ako predtým — Sheet sa nezapisuje."
+                }
             }
         } else {
             Write-Log "VAROVANIE: Súbor '$TargetFile' zatiaľ neexistuje."
