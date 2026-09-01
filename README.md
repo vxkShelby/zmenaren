@@ -162,7 +162,7 @@ do týchto dvoch stĺpcov a až potom zapíše nový kurz do `Nakupujeme`/`Pred�
 | CHF  | 0.945      | 0.915     | 0.938            | 0.908            |
 | PLN  | 4.350      | 4.210     | 4.350            | 4.210            |
 | RON  | 5.050      | 4.910     | 5.060            | 4.920            |
-| DKK  | 7.550      | 7.350     | 7.540            | 7.340            |
+| DKK  | 0.000      | 0.000     | 0.000            | 0.000            |
 | SEK  | 11.500     | 11.000    | 11.550           | 11.050           |
 | NOK  | 11.700     | 11.200    | 11.680           | 11.180           |
 
@@ -227,11 +227,15 @@ formátu (pre budúcu potrebu, keby sa export niekedy zmenil):
 - Všetkých 12 mien zo vzorky (USD, CAD, CHF, GBP, HUF, PLN, CZK, AUD, SEK,
   RON, NOK, DKK) presne zodpovedá 12 menám, ktoré má `index.html`.
 
-**Jedna vec na overenie u teba:** vo vzorke mal riadok DKK `Nakup 1.000` a
-`Predaj 10.000` — teda opačne ako všetky ostatné meny (a ako to má byť).
-Parser to zapíše presne tak, ako je (s varovaním v logu), lebo to môže byť
-len preklep v tejto konkrétnej testovacej vzorke — over si v Monetke, či je
-kurz DKK zadaný správne, nech sa na stránke nezobrazí obrátene.
+**Mena, ktorá sa momentálne neobchoduje:** DKK je v exporte vždy s `Nakup
+0.000` / `Predaj 0.000` (v prvej testovacej vzorke to bolo ešte `1.000` /
+`10.000` — vysvetlené ako preklep v skúšobných dátach, druhá vzorka to už
+potvrdila ako `0.000`/`0.000`). Parser aj `Write-RatesToGoogleSheet` takýto
+riadok zapíšu tak, ako je (0/0) — `index.html` ho na stránke sám zobrazí ako
+"–" namiesto "0,00", nech DKK v lístku ostane vidieť (tak ako na fyzickej
+tabuli), len bez konkrétneho kurzu. Rovnaký princíp bude fungovať
+automaticky pre akúkoľvek ďalšiu menu, ktorú Monetka niekedy prestane
+obchodovať.
 
 ### 4. GitHub Pages — hotovo ✅
 Živé na **https://vxkshelby.github.io/zmenaren/**. Repozitár musel byť najprv

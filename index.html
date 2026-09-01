@@ -889,9 +889,9 @@
     },
     {
       from: "06-15", to: "09-15",
-      sk: "Cestujete v lete? Vymeníme aj RON a GBP pre Rumunsko a Britániu.",
-      en: "Traveling this summer? We also exchange RON and GBP for Romania and Britain.",
-      de: "Reisen Sie im Sommer? Wir wechseln auch RON und GBP für Rumänien und Großbritannien.",
+      sk: "Cestujete na dovolenku? Vymeníme vám aj $ bankovky v malom množstve.",
+      en: "Going on vacation? We also exchange $ banknotes in small quantities.",
+      de: "Fahren Sie in den Urlaub? Wir wechseln auch $ Banknoten in kleinen Mengen.",
     },
   ];
 
@@ -1181,7 +1181,7 @@
     { code: "CHF", buy: 0.945,  sell: 0.915,  prevBuy: 0.938,  prevSell: 0.908 },
     { code: "PLN", buy: 4.350,  sell: 4.210,  prevBuy: 4.350,  prevSell: 4.210 },
     { code: "RON", buy: 5.050,  sell: 4.910,  prevBuy: 5.060,  prevSell: 4.920 },
-    { code: "DKK", buy: 7.550,  sell: 7.350,  prevBuy: 7.540,  prevSell: 7.340 },
+    { code: "DKK", buy: 0,      sell: 0,      prevBuy: 0,      prevSell: 0 },
     { code: "SEK", buy: 11.500, sell: 11.000, prevBuy: 11.550, prevSell: 11.050 },
     { code: "NOK", buy: 11.700, sell: 11.200, prevBuy: 11.680, prevSell: 11.180 },
   ];
@@ -1190,6 +1190,14 @@
     const num = Number(n);
     if (Number.isNaN(num)) return "—";
     return num.toLocaleString("sk-SK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // Pre bunky s kurzom v tabuľke: 0 (Monetka takto označuje menu, ktorú
+  // momentálne neobchodujeme, napr. DKK) sa ukáže ako "–", nie ako "0,00".
+  function formatRate(n) {
+    const num = Number(n);
+    if (!num) return "–";
+    return formatNumber(num);
   }
 
   // Kurzy chodia z ručne editovaného Google Sheetu — kód meny (a čokoľvek
@@ -1242,8 +1250,8 @@
             <span class="country">${escapeHtml(countryName(r.code))}</span>
           </span>
         </td>
-        <td class="num buy">${formatNumber(r.buy)}</td>
-        <td class="num sell">${formatNumber(r.sell)}</td>
+        <td class="num buy">${formatRate(r.buy)}</td>
+        <td class="num sell">${formatRate(r.sell)}</td>
         <td class="num change">
           ${renderDelta(r.buy, r.prevBuy)}<br>
           ${renderDelta(r.sell, r.prevSell)}

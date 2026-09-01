@@ -53,6 +53,10 @@ $WatchFilter   = "ExportKL.txt"
 #
 # Súbor je vo Windows-1250 (nie UTF-8) — vidno to na "Medveck�" namiesto
 # "Medvecká" vo vzorke, keby sa čítal ako UTF-8.
+#
+# Meny, ktoré sa momentálne neobchodujú (napr. DKK), má Monetka v exporte
+# aj tak uvedené, ale s Nákup aj Predaj na 0 — také riadky sa zapíšu ako sú
+# (0/0), stránka si ich sama zobrazí ako "–" namiesto "0,00".
 function Parse-MonetkaExport {
     param([string]$FilePath)
 
@@ -73,6 +77,15 @@ function Parse-MonetkaExport {
         $code = $fields[0].ToUpper()
         $buy  = [double]::Parse($fields[2], [Globalization.CultureInfo]::InvariantCulture)
         $sell = [double]::Parse($fields[3], [Globalization.CultureInfo]::InvariantCulture)
+
+        # Meny, ktoré sa momentálne neobchodujú, má Monetka v exporte s
+        # nákupom aj predajom na 0 (napr. DKK) — také riadky sa zapíšu tak,
+        # ako sú (0/0); index.html si ich sám zobrazí ako "–" namiesto "0,00",
+        # nech mena ostane v lístku vidieť, len bez konkrétneho kurzu.
+        if ($buy -eq 0 -and $sell -eq 0) {
+            $rates += [PSCustomObject]@{ code = $code; buy = 0; sell = 0 }
+            continue
+        }
 
         if ($buy -lt $sell) {
             Write-Warning "$code`: Nakup ($buy) je nižšie ako Predaj ($sell) — over v Monetke, zvyčajne to má byť naopak. Zapisuje sa tak, ako je."
