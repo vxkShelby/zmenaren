@@ -1456,15 +1456,23 @@
       const rates = [];
       let sourceTimestamp = null;
       data.table.rows.forEach(row => {
-        // .trim().toUpperCase() — vlastník hárku môže omylom napísať kód
-        // meny malými písmenami alebo s medzerou navyše ("czk "); bez
-        // normalizácie by sa taký riadok tváril ako neznáma mena.
-        const code = String(row.c[0]?.v ?? "").trim().toUpperCase();
-        if (code === "LAST_UPDATE") {
-          const parsed = new Date(row.c[1]?.v);
+        // .trim() — vlastník hárku môže omylom napísať kód meny malými
+        // písmenami alebo s medzerou navyše ("czk "); bez normalizácie by sa
+        // taký riadok tváril ako neznáma mena.
+        const rawCode = String(row.c[0]?.v ?? "").trim();
+        // LAST_UPDATE aj časová značka sú spolu v JEDNOM stĺpci A (nie A+B) —
+        // stĺpec B obsahuje takmer výhradne čísla (kurzy), takže Google Sheets
+        // "gviz" API si stĺpec B automaticky odvodí ako číselný a text v ňom
+        // (ISO dátum v riadku LAST_UPDATE) potom potichu zahodí (vráti null).
+        // Stĺpec A je vždy text (kódy mien), takže tam sa časová značka
+        // spoľahlivo prenesie.
+        if (rawCode.toUpperCase().startsWith("LAST_UPDATE")) {
+          const raw = rawCode.slice(rawCode.indexOf("|") + 1);
+          const parsed = new Date(raw);
           if (!Number.isNaN(parsed.getTime())) sourceTimestamp = parsed;
           return;
         }
+        const code = rawCode.toUpperCase();
         if (!code) return;
         rates.push({
           code,

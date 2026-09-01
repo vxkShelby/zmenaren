@@ -245,13 +245,22 @@ function Write-RatesToGoogleSheet {
     # nezmenilo). $UpdateTimestampUtc je čas, kedy Monetka kurzy naozaj
     # vygenerovala (z hlavičky exportu) — nie čas súboru na disku ani čas,
     # kedy to watcher spracoval, aby sa "Aktualizované" falošne neposúvalo pri
-    # každom reštarte watchera. Samostatný zápis (nie súčasť dávky vyššie),
-    # nech je jednoduchý na odladenie. valueInputOption=RAW = uloží sa vždy
-    # presne ako čistý text, Google Sheets si to nebude "chytro" prekladať na
-    # dátum.
+    # každom reštarte watchera.
+    #
+    # Kód aj časová značka idú do JEDNÉHO stĺpca A ("LAST_UPDATE|2026-09-01T...Z"),
+    # NIE do A+B — stĺpec B má takmer vo všetkých riadkoch číslo (kurz), takže
+    # Google Sheets "gviz" API (ktoré si stránka ťahá) si stĺpec B automaticky
+    # odvodí ako číselný a text v ňom (dátum v tomto jedinom riadku) potichu
+    # zahodí (vráti null) — stránka by tak nikdy nedostala platnú časovú
+    # značku. Stĺpec A je vždy text (kódy mien), tam sa prenesie spoľahlivo.
+    # Stĺpec B v tomto riadku sa vyprázdni, nech tam nestraší stará hodnota.
+    # Samostatný zápis (nie súčasť dávky vyššie), nech je jednoduchý na
+    # odladenie. valueInputOption=RAW = uloží sa vždy presne ako čistý text,
+    # Google Sheets si to nebude "chytro" prekladať na dátum/číslo.
     $lastUpdateRange = "$SheetName!A20:B20"
     $lastUpdateUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($lastUpdateRange))?valueInputOption=RAW"
-    $lastUpdateBody = @{ values = @(, @("LAST_UPDATE", $UpdateTimestampUtc.ToString("yyyy-MM-ddTHH:mm:ssZ"))) } | ConvertTo-Json -Depth 4
+    $lastUpdateValue = "LAST_UPDATE|$($UpdateTimestampUtc.ToString("yyyy-MM-ddTHH:mm:ssZ"))"
+    $lastUpdateBody = @{ values = @(, @($lastUpdateValue, "")) } | ConvertTo-Json -Depth 4
     Invoke-RestMethod -Uri $lastUpdateUrl -Headers $headers -Method Put -Body $lastUpdateBody -ContentType "application/json" | Out-Null
 
     Write-Log "Zapísaných $($Rates.Count) kurzov do Google Sheetu."
