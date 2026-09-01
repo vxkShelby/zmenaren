@@ -211,6 +211,10 @@ function Get-HistoryLastDate {
     $range = "$HistorySheetName!A2:A"
     $url = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($range))?majorDimension=COLUMNS"
     $resp = Invoke-RestMethod -Uri $url -Headers $Headers -Method Get
+    # Kým je hárok prázdny (napr. hneď po vytvorení), Google API v odpovedi
+    # "values" vôbec nevráti — priame indexovanie $resp.values[0] by vtedy
+    # spadlo s "Cannot index into a null array."
+    if (-not $resp.values -or $resp.values.Count -eq 0) { return $null }
     $col = $resp.values[0]
     if ($col -and $col.Count -gt 0) { return $col[$col.Count - 1] }
     return $null
