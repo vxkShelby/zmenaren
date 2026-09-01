@@ -217,9 +217,13 @@ function Write-RatesToGoogleSheet {
     # nech "Aktualizované" na stránke ukazuje čas SKUTOČNEJ zmeny kurzu, nie
     # každé obnovenie stránky (tá si dáta ťahá každých 60 s, aj keď sa nič
     # nezmenilo).
+    # Predsunutá "'" prinúti Google Sheets brať hodnotu ako čistý text (presne
+    # ako keď sa apostrof napíše ručne pred bunku v UI) — inak by si Sheets
+    # tento reťazec sám "chytro" preformátoval na dátum/čas podľa vlastného
+    # formátu, čo v bunke vyzerá zmätočne a nemusí sa dať spoľahlivo prečítať späť.
     $updates += @{
         range  = "$SheetName!A20:B20"
-        values = @(, @("LAST_UPDATE", [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")))
+        values = @(, @("LAST_UPDATE", "'" + [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")))
     }
 
     $body = @{ valueInputOption = "USER_ENTERED"; data = $updates } | ConvertTo-Json -Depth 6
