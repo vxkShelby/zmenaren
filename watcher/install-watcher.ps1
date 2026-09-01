@@ -53,14 +53,28 @@ $settings = New-ScheduledTaskSettingsSet `
     -RestartInterval (New-TimeSpan -Minutes 1) `
     -ExecutionTimeLimit ([TimeSpan]::Zero)  # bez časového limitu — má bežať stále
 
-Register-ScheduledTask `
-    -TaskName $TaskName `
-    -Action $action `
-    -Trigger $trigger `
-    -Settings $settings `
-    -Description "Automaticky odosiela kurzy zo Zmenárne (Monetka) do Google Sheetu." `
-    -Force `
-    | Out-Null
+try {
+    Register-ScheduledTask `
+        -TaskName $TaskName `
+        -Action $action `
+        -Trigger $trigger `
+        -Settings $settings `
+        -Description "Automaticky odosiela kurzy zo Zmenárne (Monetka) do Google Sheetu." `
+        -Force `
+        -ErrorAction Stop `
+        | Out-Null
+} catch {
+    Write-Host ""
+    Write-Host "CHYBA: Naplánovanú úlohu sa nepodarilo vytvoriť: $_" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Najčastejšia príčina (aj keď je 'At LogOn' bez potreby hesla) je, že" -ForegroundColor Yellow
+    Write-Host "tento Windows účet nemá právo vytvárať naplánované úlohy. Skús toto okno" -ForegroundColor Yellow
+    Write-Host "zavrieť a otvoriť PowerShell 7 cez 'Spustiť ako správca' (pravý klik na" -ForegroundColor Yellow
+    Write-Host "ikonu → Run as administrator), potom znova spusti:" -ForegroundColor Yellow
+    Write-Host "  cd C:\zmenaren-watcher"
+    Write-Host "  pwsh .\install-watcher.ps1"
+    exit 1
+}
 
 Write-Host ""
 Write-Host "Hotovo! Watcher je teraz nastavený, aby sa spúšťal automaticky."
