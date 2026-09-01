@@ -223,7 +223,10 @@ function Write-Log {
     param([string]$Message)
     $line = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $Message"
     Write-Host $line
-    try { Add-Content -Path $LogPath -Value $line -Encoding UTF8 } catch {}
+    # utf8BOM (nie obyčajné utf8) — BOM na začiatku súboru pomáha Poznámkovému
+    # bloku aj iným editorom spoľahlivo rozoznať UTF-8, nech sa diakritika
+    # nezobrazuje rozbitá.
+    try { Add-Content -Path $LogPath -Value $line -Encoding utf8BOM } catch {}
 }
 
 # Windows bublinkové upozornenie pri paneli úloh. Ak beží skryto/bez
