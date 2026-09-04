@@ -591,6 +591,13 @@
     text-transform: uppercase;
     white-space: nowrap;
   }
+  .table-title-row {
+    text-align: center;
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+    padding: 12px 14px 9px;
+    border-bottom: 1px solid rgba(245, 239, 226, 0.2);
+  }
   thead th.num, tbody td.num {
     text-align: right;
     font-variant-numeric: tabular-nums;
@@ -745,6 +752,9 @@
           <table>
             <thead>
               <tr>
+                <th colspan="4" class="table-title-row" id="table-title">Valutový kurzový lístok</th>
+              </tr>
+              <tr>
                 <th id="th-currency" scope="col">Mena</th>
                 <th class="num" id="th-buy" scope="col">Nakupujeme<br>kurzom za 1€</th>
                 <th class="num" id="th-sell" scope="col">Predávame<br>kurzom za 1€</th>
@@ -805,6 +815,10 @@
 
           <div class="mini-faq">
             <p class="calc-title" id="faq-title">Časté otázky</p>
+            <div class="faq-item">
+              <p class="faq-q" id="faq-q3">Čo je valuta?</p>
+              <p class="faq-a" id="faq-a3">Cudzia mena obchodovaná v hotovosti — bankovky a mince, presne to, čo v zmenárni vymieňame (na rozdiel od bezhotovostných prevodov).</p>
+            </div>
             <div class="faq-item">
               <p class="faq-q" id="faq-q1">Platba kartou?</p>
               <p class="faq-a" id="faq-a1">Nie, vymieňame len v hotovosti.</p>
@@ -969,6 +983,7 @@
       statusClosed: "Zatvorené",
       opensAt: (t) => `Otvárame o ${t}`,
       closesAt: (t) => `Zatvárame o ${t}`,
+      tableTitle: "Valutový kurzový lístok",
       thCurrency: "Mena",
       thBuy: "Nakupujeme<br>kurzom za 1€",
       thSell: "Predávame<br>kurzom za 1€",
@@ -989,6 +1004,8 @@
       helperSell: (amount, code) => `Toľko EUR zaplatíte za ${amount} ${code}.`,
       whyUs: ["0 % poplatok", "Výhodnejšie ako banka", "Žiadne čakanie"],
       faqTitle: "Časté otázky",
+      faqQ3: "Čo je valuta?",
+      faqA3: "Cudzia mena obchodovaná v hotovosti — bankovky a mince, presne to, čo v zmenárni vymieňame (na rozdiel od bezhotovostných prevodov).",
       faqQ1: "Platba kartou?",
       faqA1: "Nie, vymieňame len v hotovosti.",
       faqQ2: "Vymieňate aj mince?",
@@ -1018,6 +1035,7 @@
       statusClosed: "Closed",
       opensAt: (t) => `Opens at ${t}`,
       closesAt: (t) => `Closes at ${t}`,
+      tableTitle: "Cash Exchange Rates",
       thCurrency: "Currency",
       thBuy: "We buy<br>per 1€",
       thSell: "We sell<br>per 1€",
@@ -1038,6 +1056,8 @@
       helperSell: (amount, code) => `You'll pay this much EUR for ${amount} ${code}.`,
       whyUs: ["0% fee", "Better rate than a bank", "No waiting"],
       faqTitle: "FAQ",
+      faqQ3: "What are \"cash rates\"?",
+      faqA3: "The exchange rate for physical foreign currency — banknotes and coins — exactly what we exchange here (as opposed to bank transfers).",
       faqQ1: "Can I pay by card?",
       faqA1: "No, we only exchange cash.",
       faqQ2: "Do you exchange coins?",
@@ -1067,6 +1087,7 @@
       statusClosed: "Geschlossen",
       opensAt: (t) => `Öffnet um ${t}`,
       closesAt: (t) => `Schließt um ${t}`,
+      tableTitle: "Sortenkursliste",
       thCurrency: "Währung",
       thBuy: "Wir kaufen<br>pro 1€",
       thSell: "Wir verkaufen<br>pro 1€",
@@ -1087,6 +1108,8 @@
       helperSell: (amount, code) => `So viel EUR zahlen Sie für ${amount} ${code}.`,
       whyUs: ["0 % Gebühr", "Günstiger als die Bank", "Kein Warten"],
       faqTitle: "Häufige Fragen",
+      faqQ3: "Was sind Sortenkurse?",
+      faqA3: "Der Kurs für physisches Bargeld in Fremdwährung — Banknoten und Münzen — genau das, was wir hier wechseln (im Unterschied zum unbaren Zahlungsverkehr).",
       faqQ1: "Kann ich mit Karte zahlen?",
       faqA1: "Nein, wir wechseln nur Bargeld.",
       faqQ2: "Wechseln Sie auch Münzen?",
@@ -1462,6 +1485,7 @@
 
     document.getElementById("fee-badge").textContent = t.feeBadge;
     document.getElementById("hours-static").textContent = t.hours;
+    document.getElementById("table-title").textContent = t.tableTitle;
     document.getElementById("th-currency").textContent = t.thCurrency;
     document.getElementById("th-buy").innerHTML = t.thBuy;
     document.getElementById("th-sell").innerHTML = t.thSell;
@@ -1480,6 +1504,8 @@
     document.getElementById("why-us-2").textContent = t.whyUs[1];
     document.getElementById("why-us-3").textContent = t.whyUs[2];
     document.getElementById("faq-title").textContent = t.faqTitle;
+    document.getElementById("faq-q3").textContent = t.faqQ3;
+    document.getElementById("faq-a3").textContent = t.faqA3;
     document.getElementById("faq-q1").textContent = t.faqQ1;
     document.getElementById("faq-a1").textContent = t.faqA1;
     document.getElementById("faq-q2").textContent = t.faqQ2;
