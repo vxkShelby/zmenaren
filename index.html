@@ -416,12 +416,13 @@
   }
 
   .info-notice {
-    padding: 12px 14px;
-    background: rgba(226, 35, 26, 0.05);
-    border: 1px solid rgba(226, 35, 26, 0.25);
+    padding: 14px 16px;
+    background: rgba(226, 35, 26, 0.09);
+    border: 1.5px solid rgba(226, 35, 26, 0.4);
+    border-left: 4px solid var(--lg-red);
     border-radius: 10px;
-    font-size: 0.76rem;
-    color: var(--ink-soft);
+    font-size: 0.82rem;
+    color: var(--ink);
   }
   .info-notice p { margin: 0; }
   .info-notice p + p { margin-top: 6px; }
@@ -429,6 +430,10 @@
     content: "• ";
     color: var(--lg-red);
     font-weight: 700;
+  }
+  .info-notice-primary {
+    font-weight: 800;
+    color: var(--lg-red);
   }
 
   .fetch-error-banner {
@@ -793,6 +798,11 @@
             </div>
           </div>
 
+          <div class="info-notice">
+            <p id="notice-id" class="info-notice-primary">Doklad totožnosti potrebný pri výmene nad 1 000 €.</p>
+            <p id="notice-notes">Neprijímame neplatné bankovky.</p>
+          </div>
+
           <div class="why-us">
             <div class="why-us-item">
               <span class="why-us-icon" aria-hidden="true">%</span>
@@ -827,11 +837,6 @@
               <p class="faq-q" id="faq-q2">Vymieňate aj mince?</p>
               <p class="faq-a" id="faq-a2">Áno, mince vymieňame v CZK, GBP, CHF, HUF, PLN a NOK — ostatné meny len v bankovkách.</p>
             </div>
-          </div>
-
-          <div class="info-notice">
-            <p id="notice-id">Doklad totožnosti potrebný pri výmene nad 1 000 €.</p>
-            <p id="notice-notes">Neprijímame neplatné bankovky.</p>
           </div>
         </div>
       </div>
