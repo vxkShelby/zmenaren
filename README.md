@@ -148,29 +148,35 @@ tá sa neuvádza ako riadok).
 je preto vždy vyššie číslo ako `Predávame` (zmenáreň si tak necháva maržu) —
 presne ako v reálnom príklade z predajne: CZK 24,80 (nákup) / 23,50 (predaj).
 
-Posledné dva stĺpce (`Nakup. predch.` / `Predaj predch.`) sú hodnoty **pred**
-poslednou zmenou — z nich si `index.html` dopočíta stĺpec "Zmena" (▲/▼ oproti
-poslednému kurzu). Watcher pri každom zápise najprv presunie aktuálnu hodnotu
-do týchto dvoch stĺpcov a až potom zapíše nový kurz do `Nakupujeme`/`Predávame`.
+Watcher navyše pri každom zápise pridá osobitný riadok `LAST_UPDATE|<čas>` (v
+stĺpci A, pod poslednou menou) — z neho `index.html` vie čas SKUTOČNEJ
+poslednej zmeny kurzu (z hlavičky exportu z Monetky), nie čas vlastného
+sťahovania stránky.
 
-| Mena | Nakupujeme | Predávame | Nakup. predch. | Predaj predch. |
-|------|-----------:|----------:|----------------:|----------------:|
-| AUD  | 1.680      | 1.620     | 1.665            | 1.605            |
-| USD  | 1.100      | 1.060     | 1.100            | 1.060            |
-| CAD  | 1.510      | 1.450     | 1.525            | 1.465            |
-| CZK  | 24.80      | 23.50     | 24.75            | 23.45            |
-| GBP  | 0.870      | 0.840     | 0.870            | 0.840            |
-| HUF  | 402.0      | 388.0     | 405.0            | 391.0            |
-| CHF  | 0.945      | 0.915     | 0.938            | 0.908            |
-| PLN  | 4.350      | 4.210     | 4.350            | 4.210            |
-| RON  | 5.050      | 4.910     | 5.060            | 4.920            |
-| DKK  | 0.000      | 0.000     | 0.000            | 0.000            |
-| SEK  | 11.500     | 11.000    | 11.550           | 11.050           |
-| NOK  | 11.700     | 11.200    | 11.680           | 11.180           |
+| Mena | Nakupujeme | Predávame |
+|------|-----------:|----------:|
+| AUD  | 1.680      | 1.620     |
+| USD  | 1.100      | 1.060     |
+| CAD  | 1.510      | 1.450     |
+| CZK  | 24.80      | 23.50     |
+| GBP  | 0.870      | 0.840     |
+| HUF  | 402.0      | 388.0     |
+| CHF  | 0.945      | 0.915     |
+| PLN  | 4.350      | 4.210     |
+| RON  | 5.050      | 4.910     |
+| DKK  | 0.000      | 0.000     |
+| SEK  | 11.500     | 11.000    |
+| NOK  | 11.700     | 11.200    |
 
 (Toto sú len ilustračné čísla na overenie formátu — reálne hodnoty pôjdu
 priamo z Monetky, takže presnosť/zaokrúhľovanie sa napokon riadi tým, čo
 exportuje ona.)
+
+Watcher si navyše sám vytvorí druhý hárok **`History`** (`Dátum | Kód | Nákup
+| Predaj`) — raz denne doň pridá snímku kurzu každej meny. Z neho si
+`index.html` počíta stĺpec "Týždeň" (zmena kurzu za posledných 7 dní) —
+netreba v ňom nič ručne upravovať, watcher aj čítanie na stránke sú naň
+napojené automaticky.
 
 Zdieľať ho ako **"Ktokoľvek s odkazom — Zobrazovať"**, nech ho `index.html`
 vie čítať. ID hárku (z URL) sa potom doplní do `CONFIG.SHEET_ID`

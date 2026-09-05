@@ -1264,23 +1264,21 @@
   // Konvencia: koľko jednotiek cudzej meny dostanete za 1 EUR.
   // "Nakupujeme" je vždy vyššie číslo ako "Predávame" (zmenáreň si tak
   // necháva maržu) — presne ako v reálnom príklade: CZK 24,80 / 23,50.
-  // prevBuy/prevSell = hodnoty pred poslednou zmenou kurzu (momentálne sa
-  // nikde nezobrazujú, ponechané pre prípadné budúce použitie). Stĺpec
-  // "Týždeň" v ukážkových dátach ostáva prázdny ("–") — bez napojenia na
-  // hárok "History" nie je čo zobraziť.
+  // Stĺpec "Týždeň" v ukážkových dátach ostáva prázdny ("–") — bez napojenia
+  // na hárok "History" nie je čo zobraziť.
   const DEMO_RATES = [
-    { code: "AUD", buy: 1.680,  sell: 1.620,  prevBuy: 1.665,  prevSell: 1.605 },
-    { code: "USD", buy: 1.100,  sell: 1.060,  prevBuy: 1.100,  prevSell: 1.060 },
-    { code: "CAD", buy: 1.510,  sell: 1.450,  prevBuy: 1.525,  prevSell: 1.465 },
-    { code: "CZK", buy: 24.80,  sell: 23.50,  prevBuy: 24.75,  prevSell: 23.45 },
-    { code: "GBP", buy: 0.870,  sell: 0.840,  prevBuy: 0.870,  prevSell: 0.840 },
-    { code: "HUF", buy: 402.0,  sell: 388.0,  prevBuy: 405.0,  prevSell: 391.0 },
-    { code: "CHF", buy: 0.945,  sell: 0.915,  prevBuy: 0.938,  prevSell: 0.908 },
-    { code: "PLN", buy: 4.350,  sell: 4.210,  prevBuy: 4.350,  prevSell: 4.210 },
-    { code: "RON", buy: 5.050,  sell: 4.910,  prevBuy: 5.060,  prevSell: 4.920 },
-    { code: "DKK", buy: 0,      sell: 0,      prevBuy: 0,      prevSell: 0 },
-    { code: "SEK", buy: 11.500, sell: 11.000, prevBuy: 11.550, prevSell: 11.050 },
-    { code: "NOK", buy: 11.700, sell: 11.200, prevBuy: 11.680, prevSell: 11.180 },
+    { code: "AUD", buy: 1.680,  sell: 1.620 },
+    { code: "USD", buy: 1.100,  sell: 1.060 },
+    { code: "CAD", buy: 1.510,  sell: 1.450 },
+    { code: "CZK", buy: 24.80,  sell: 23.50 },
+    { code: "GBP", buy: 0.870,  sell: 0.840 },
+    { code: "HUF", buy: 402.0,  sell: 388.0 },
+    { code: "CHF", buy: 0.945,  sell: 0.915 },
+    { code: "PLN", buy: 4.350,  sell: 4.210 },
+    { code: "RON", buy: 5.050,  sell: 4.910 },
+    { code: "DKK", buy: 0,      sell: 0 },
+    { code: "SEK", buy: 11.500, sell: 11.000 },
+    { code: "NOK", buy: 11.700, sell: 11.200 },
   ];
 
   function formatNumber(n) {
@@ -1583,7 +1581,14 @@
   async function fetchHistory() {
     if (!CONFIG.SHEET_ID) return;
     try {
-      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.HISTORY_SHEET_NAME)}`;
+      // "History" rastie o cca 12 riadkov denne donekonečna (watcher doň
+      // pridáva dennú snímku každej meny) — na "Týždeň" stačí posledných pár
+      // desiatok dní, preto sa cez tq (Google Visualization Query Language)
+      // vyžiada len najnovších 200 riadkov (~16 dní pri 12 menách), nie celý
+      // hárok. Bez tohto obmedzenia by fetch po rokoch prevádzky sťahoval
+      // stále väčší a väčší súbor pri každom 60-sekundovom obnovení stránky.
+      const query = encodeURIComponent("select * order by A desc limit 200");
+      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.HISTORY_SHEET_NAME)}&tq=${query}`;
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
       const res = await fetch(url, { cache: "no-store", signal: controller.signal });
@@ -1615,7 +1620,13 @@
       renderRates(DEMO_RATES, true);
       return;
     }
-    const historyPromise = fetchHistory(); // beží súbežne, nekritické (viď catch vyššie)
+    // História beží súbežne, ale úplne nezávisle od kurzov — kurzy sa
+    // vykreslia hneď, ako prídu, aj keby História bola pomalá alebo
+    // nedostupná (napr. zaseknutá mall WiFi); keď história dorazí, tabuľka sa
+    // jednoducho prekreslí nanovo (zmení sa len stĺpec "Týždeň").
+    fetchHistory().then(() => {
+      if (latestRates.length) renderRates(latestRates, lastIsDemo);
+    });
     try {
       const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}`;
       // Timeout, aby stránka pri zaseknutej mall WiFi nečakala na fetch donekonečna,
@@ -1630,11 +1641,9 @@
       const data = JSON.parse(jsonText);
 
       // Očakávaný formát riadkov v hárku:
-      // Mena | Nakupujeme | Predávame | Nakup. predch. | Predaj predch.
-      // (koľko jednotiek cudzej meny dostanete za 1 EUR; posledné dva stĺpce
-      // sú hodnoty pred poslednou zmenou kurzu — momentálne sa nikde
-      // nezobrazujú, "Týždeň" nižšie počíta zmenu z hárku "History", nie z
-      // týchto dvoch stĺpcov, no ponechávame ich pre prípadné budúce použitie)
+      // Mena | Nakupujeme | Predávame
+      // (koľko jednotiek cudzej meny dostanete za 1 EUR; "Týždeň" nižšie
+      // počíta zmenu z oddeleného hárku "History", nie z tohto hárku)
       //
       // Watcher navyše zapisuje osobitný riadok "LAST_UPDATE" (čas skutočnej
       // poslednej zmeny kurzu z Monetky) — ten sa tu vyčlení a použije namiesto
@@ -1665,8 +1674,6 @@
           code,
           buy: row.c[1]?.v,
           sell: row.c[2]?.v,
-          prevBuy: row.c[3]?.v,
-          prevSell: row.c[4]?.v,
         });
       });
 

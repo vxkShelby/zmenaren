@@ -247,15 +247,12 @@ function Write-RatesToGoogleSheet {
     $accessToken = Get-GoogleAccessToken -KeyPath $ServiceAccountKeyPath
     $headers = @{ Authorization = "Bearer $accessToken" }
 
-    # Sheet má stĺpce: Mena | Nakupujeme | Predávame | Nakup. predch. | Predaj predch.
-    # Načítame CELÝ existujúci hárok a menu k riadku priradíme podľa stĺpca A
-    # (kód meny) — nezávisí to teda od poradia, v akom Monetka kurzy exportuje,
-    # ani od poradia riadkov v samotnom hárku.
-    # valueRenderOption=UNFORMATTED_VALUE — bez toho by Google vrátil čísla
-    # naformátované podľa jazyka hárku (napr. "1,683" ako TEXT), čo pri
-    # spätnom čítaní v PowerShelli (iné kultúrne nastavenie ako Sheet) mohlo
-    # zle interpretovať čiarku/bodku a "prehltnúť" desatinnú časť.
-    $range = "$SheetName!A2:E1000"
+    # Sheet má stĺpce: Mena | Nakupujeme | Predávame. Načítame stĺpec A
+    # existujúceho hárku a menu k riadku priradíme podľa kódu meny —
+    # nezávisí to teda od poradia, v akom Monetka kurzy exportuje, ani od
+    # poradia riadkov v samotnom hárku. (Stĺpec A je vždy text, takže tu
+    # netreba riešiť žiadne kultúrne/formátovacie zvláštnosti Google Sheets.)
+    $range = "$SheetName!A2:A1000"
     $getUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($range))?valueRenderOption=UNFORMATTED_VALUE"
     $existing = (Invoke-RestMethod -Uri $getUrl -Headers $headers -Method Get).values
     if (-not $existing) { $existing = @() }
@@ -270,24 +267,16 @@ function Write-RatesToGoogleSheet {
         }
 
         if ($rowIndex -ge 0) {
-            $old = $existing[$rowIndex]
-            # "predch." sa posunie len ak sa kurz oproti starému SKUTOČNE zmenil —
-            # inak zostáva ukazovať poslednú reálnu zmenu, nie každý needitovaný zápis.
-            $changed = ([double]$old[1] -ne $r.buy) -or ([double]$old[2] -ne $r.sell)
-            $prevBuy  = if ($changed) { [double]$old[1] } else { [double]$old[3] }
-            $prevSell = if ($changed) { [double]$old[2] } else { [double]$old[4] }
             $rowNum = $rowIndex + 2
         } else {
-            # Mena, ktorá v hárku ešte nemá riadok — pridá sa na koniec bez histórie.
-            $prevBuy = $r.buy
-            $prevSell = $r.sell
+            # Mena, ktorá v hárku ešte nemá riadok — pridá sa na koniec.
             $rowNum = $nextNewRow
             $nextNewRow++
         }
 
         $updates += @{
-            range  = "$SheetName!A${rowNum}:E${rowNum}"
-            values = @(, @($r.code, $r.buy, $r.sell, $prevBuy, $prevSell))
+            range  = "$SheetName!A${rowNum}:C${rowNum}"
+            values = @(, @($r.code, $r.buy, $r.sell))
         }
     }
 
@@ -295,16 +284,21 @@ function Write-RatesToGoogleSheet {
     $batchUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values:batchUpdate"
     Invoke-RestMethod -Uri $batchUrl -Headers $headers -Method Post -Body $body -ContentType "application/json" | Out-Null
 
-    # Osobitný riadok s časom tejto (skutočnej) aktualizácie — na pevnom
-    # riadku 20, s dostatočným odstupom od aktuálnych 12 mien, aby nekolidoval
-    # ani pri pridaní pár ďalších mien do zoznamu. index.html ho vyčlení podľa
-    # kódu "LAST_UPDATE" v stĺpci A a ukáže namiesto času vlastného fetchu,
-    # nech "Aktualizované" na stránke ukazuje čas SKUTOČNEJ zmeny kurzu, nie
-    # každé obnovenie stránky (tá si dáta ťahá každých 60 s, aj keď sa nič
-    # nezmenilo). $UpdateTimestampUtc je čas, kedy Monetka kurzy naozaj
-    # vygenerovala (z hlavičky exportu) — nie čas súboru na disku ani čas,
-    # kedy to watcher spracoval, aby sa "Aktualizované" falošne neposúvalo pri
-    # každom reštarte watchera.
+    # Osobitný riadok s časom tejto (skutočnej) aktualizácie — vždy hneď za
+    # poslednou menou ($nextNewRow, ktorý cyklus vyššie nechal ukazovať na
+    # prvý naozaj voľný riadok), nie na pevnom čísle riadku. Predtým bol
+    # natvrdo na riadku 20 (s odstupom od vtedajších 12 mien) — keby sa ale
+    # niekedy pridalo dosť nových mien naraz, aby zoznam dosiahol riadok 20
+    # skôr, než sa stihol zapísať tento riadok, natvrdo zapísaný LAST_UPDATE
+    # by prepísal poslednú novú menu. Dynamický riadok toto vylučuje úplne.
+    # index.html vyčlení tento riadok podľa kódu "LAST_UPDATE" v stĺpci A
+    # (nezávisle od toho, na ktorom riadku presne je) a ukáže namiesto času
+    # vlastného fetchu, nech "Aktualizované" na stránke ukazuje čas SKUTOČNEJ
+    # zmeny kurzu, nie každé obnovenie stránky (tá si dáta ťahá každých 60 s,
+    # aj keď sa nič nezmenilo). $UpdateTimestampUtc je čas, kedy Monetka
+    # kurzy naozaj vygenerovala (z hlavičky exportu) — nie čas súboru na
+    # disku ani čas, kedy to watcher spracoval, aby sa "Aktualizované"
+    # falošne neposúvalo pri každom reštarte watchera.
     #
     # Kód aj časová značka idú do JEDNÉHO stĺpca A ("LAST_UPDATE|2026-09-01T...Z"),
     # NIE do A+B — stĺpec B má takmer vo všetkých riadkoch číslo (kurz), takže
@@ -316,7 +310,8 @@ function Write-RatesToGoogleSheet {
     # Samostatný zápis (nie súčasť dávky vyššie), nech je jednoduchý na
     # odladenie. valueInputOption=RAW = uloží sa vždy presne ako čistý text,
     # Google Sheets si to nebude "chytro" prekladať na dátum/číslo.
-    $lastUpdateRange = "$SheetName!A20:B20"
+    $lastUpdateRow = $nextNewRow
+    $lastUpdateRange = "$SheetName!A${lastUpdateRow}:B${lastUpdateRow}"
     $lastUpdateUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($lastUpdateRange))?valueInputOption=RAW"
     $lastUpdateValue = "LAST_UPDATE|$($UpdateTimestampUtc.ToString("yyyy-MM-ddTHH:mm:ssZ"))"
     $lastUpdateBody = @{ values = @(, @($lastUpdateValue, "")) } | ConvertTo-Json -Depth 4
@@ -395,6 +390,23 @@ function Get-RatesSnapshot {
     ($Rates | Sort-Object code | ForEach-Object { "$($_.code)=$($_.buy),$($_.sell)" }) -join ";"
 }
 
+# Namiesto pevného čakania (ktoré by pri nezvyčajne veľkom/pomalom zápise —
+# napr. antivírus skenuje súbor za behu — mohlo prečítať súbor v polovici
+# zapisovania a rozparsovať neúplný obsah) sa počká, kým sa veľkosť súboru
+# medzi dvoma kontrolami prestane meniť — to spoľahlivo znamená, že Monetka
+# zápis dokončila. V bežnom prípade (rýchly zápis) to trvá rovnako krátko
+# ako predtým pevných 500 ms.
+function Wait-ForFileToStopChanging {
+    param([string]$Path, [int]$MaxAttempts = 10, [int]$IntervalMs = 250)
+    $lastSize = -1
+    for ($i = 0; $i -lt $MaxAttempts; $i++) {
+        try { $size = (Get-Item $Path).Length } catch { $size = -1 }
+        if ($size -ge 0 -and $size -eq $lastSize) { return }
+        $lastSize = $size
+        Start-Sleep -Milliseconds $IntervalMs
+    }
+}
+
 $TargetFile = Join-Path $WatchFolder $WatchFilter
 
 Write-Log "Sledujem súbor: $TargetFile (kontrola každých $PollIntervalSeconds s.)"
@@ -409,13 +421,42 @@ Write-Log "Watcher beží."
 $lastWriteTime = $null
 $lastRatesSnapshot = $null
 
+# Pri (re)štarte watchera (ktorých počas ladenia/aktualizácie skriptu môže
+# byť veľa) sa najprv skúsi zistiť, čo je aktuálne zapísané v Sheete, aby
+# prvý poll po reštarte neposlal identické kurzy znova len preto, že
+# $lastRatesSnapshot po reštarte vždy začína ako $null — bez tohto by každý
+# reštart vynútil jeden zbytočný zápis do Sheetu (aj keď sa kurzy odvtedy
+# vôbec nezmenili). Nekritické: pri akejkoľvek chybe sa jednoducho pokračuje
+# s $lastRatesSnapshot = $null ako doteraz, prvá skutočná zmena sa aj tak
+# zapíše správne.
+if ($SpreadsheetId) {
+    try {
+        $seedToken = Get-GoogleAccessToken -KeyPath $ServiceAccountKeyPath
+        $seedHeaders = @{ Authorization = "Bearer $seedToken" }
+        $seedRange = "$SheetName!A2:C1000"
+        $seedUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($seedRange))?valueRenderOption=UNFORMATTED_VALUE"
+        $seedRows = (Invoke-RestMethod -Uri $seedUrl -Headers $seedHeaders -Method Get).values
+        if ($seedRows) {
+            $seedRates = $seedRows | Where-Object { $_[0] -match '^[A-Za-z]{3}$' } | ForEach-Object {
+                [PSCustomObject]@{ code = $_[0].ToUpper(); buy = [double]$_[1]; sell = [double]$_[2] }
+            }
+            if ($seedRates.Count -gt 0) {
+                $lastRatesSnapshot = Get-RatesSnapshot -Rates $seedRates
+                Write-Log "Počiatočný stav kurzov načítaný zo Sheetu ($($seedRates.Count) mien)."
+            }
+        }
+    } catch {
+        Write-Log "VAROVANIE: Nepodarilo sa načítať počiatočný stav Sheetu (nekritické, len optimalizácia proti zbytočnému zápisu po reštarte): $_"
+    }
+}
+
 while ($true) {
     try {
         if (Test-Path $TargetFile) {
             $currentWriteTime = (Get-Item $TargetFile).LastWriteTimeUtc
             if ($null -eq $lastWriteTime -or $currentWriteTime -ne $lastWriteTime) {
                 $lastWriteTime = $currentWriteTime
-                Start-Sleep -Milliseconds 500  # počkať, kým Monetka dopíše súbor
+                Wait-ForFileToStopChanging -Path $TargetFile  # počkať, kým Monetka dopíše súbor
                 $parsed = Parse-MonetkaExport -FilePath $TargetFile
                 $rates = $parsed.Rates
                 # Čas zo samotného exportu (Monetka) je spoľahlivejší než čas
