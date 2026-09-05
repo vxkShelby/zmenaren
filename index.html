@@ -1310,7 +1310,11 @@
   function renderDelta(current, previous) {
     const cur = Number(current);
     const prev = Number(previous);
-    if (Number.isNaN(cur) || Number.isNaN(prev) || prev === 0) {
+    // cur === 0 (nie len prev === 0) — mena ako DKK sa vie stať dočasne
+    // neobchodovanou (buy/sell 0, formatRate() ju ukáže ako "–"); bez tejto
+    // podmienky by tu vyšiel klamlivý veľký "▼" pokles na nulu namiesto
+    // toho, aby sa "Týždeň" jednoducho tiež ukázal ako "–".
+    if (Number.isNaN(cur) || Number.isNaN(prev) || prev === 0 || cur === 0) {
       return '<span class="delta delta-flat">–</span>';
     }
     const diff = cur - prev;
@@ -1348,8 +1352,14 @@
   function getWeekAgoValue(code) {
     const list = latestHistory[code];
     if (!list || !list.length) return null;
-    const target = new Date();
-    target.setDate(target.getDate() - 7);
+    // Dátum "pred 7 dňami" sa počíta z toho istého miestneho (Europe/Bratislava)
+    // dňa ako nowInTrencin() používa pre otváracie hodiny — nie z
+    // new Date().toISOString(), ktorá je vždy v UTC dni prehliadača
+    // návštevníka. Okolo polnoci CET/CEST (alebo pre návštevníka z iného
+    // časového pásma) by inak vyšiel o deň posunutý cieľový dátum.
+    const todayStr = nowInTrencin().dateStr;
+    const target = new Date(`${todayStr}T00:00:00Z`);
+    target.setUTCDate(target.getUTCDate() - 7);
     const targetStr = target.toISOString().slice(0, 10);
     let candidate = null;
     for (const entry of list) {
