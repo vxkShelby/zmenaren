@@ -114,6 +114,25 @@
     font-size: 12.5px;
     letter-spacing: 0.01em;
   }
+  /* Pod ~360px (napr. staršie/menšie telefóny) sa oba rohové "toolbary" aj
+     s pevnou veľkosťou písma vyššie stále tesne dotýkajú/prekrývajú — text
+     "Väčšie písmo" sa preto na takto úzkej obrazovke vizuálne skryje (ostane
+     len ikona "A+"), ale zostáva prístupný čítačkám obrazovky (nie
+     display:none). */
+  @media (max-width: 360px) {
+    .text-size-btn { gap: 0; padding: 8px 10px; }
+    .text-size-btn span:last-child {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  }
   /* Väčšina veľkostí písma je v rem, takže zväčšenie koreňového font-size
      stačí na to, aby "veľký text" režim zväčšil celý widget naraz.
      Výnimka: tlačidlá v rohoch (jazyk, "Väčšie písmo" — viď .lang-btn a
@@ -1679,7 +1698,6 @@
 
       lastFetchFailed = false;
       document.getElementById("fetch-error-banner").hidden = true;
-      await historyPromise;
       renderRates(rates.length ? rates : DEMO_RATES, rates.length === 0, sourceTimestamp);
     } catch (err) {
       console.error("Nepodarilo sa načítať kurzy z Google Sheetu:", err);
