@@ -258,7 +258,15 @@ function Write-RatesToGoogleSheet {
     if (-not $existing) { $existing = @() }
 
     $updates = @()
-    $nextNewRow = $existing.Count + 2  # hárok má dáta od riadku 2 (riadok 1 = hlavička)
+    # Len riadky so skutočným kódom meny (presne 3 písmená) sa počítajú ako
+    # "obsadené" pri hľadaní voľného riadku pre novú menu — NIE starý riadok
+    # LAST_UPDATE|... (viď nižšie). Bez tohto filtra by sa pri každom zápise
+    # do počtu započítal aj marker z MINULÉHO behu, $nextNewRow by sa tak
+    # donekonečna posúval o riadok ďalej a starý marker by navždy ostal ako
+    # smetie v hárku — pri stabilnom počte mien má LAST_UPDATE vždy dopadnúť
+    # na ten istý (a teda prepísaný, nie nový) riadok.
+    $currencyRowCount = ($existing | Where-Object { $_ -and $_[0] -match '^[A-Za-z]{3}$' }).Count
+    $nextNewRow = $currencyRowCount + 2  # hárok má dáta od riadku 2 (riadok 1 = hlavička)
 
     foreach ($r in $Rates) {
         $rowIndex = -1
@@ -285,13 +293,17 @@ function Write-RatesToGoogleSheet {
     Invoke-RestMethod -Uri $batchUrl -Headers $headers -Method Post -Body $body -ContentType "application/json" | Out-Null
 
     # Osobitný riadok s časom tejto (skutočnej) aktualizácie — vždy hneď za
-    # poslednou menou ($nextNewRow, ktorý cyklus vyššie nechal ukazovať na
-    # prvý naozaj voľný riadok), nie na pevnom čísle riadku. Predtým bol
-    # natvrdo na riadku 20 (s odstupom od vtedajších 12 mien) — keby sa ale
-    # niekedy pridalo dosť nových mien naraz, aby zoznam dosiahol riadok 20
-    # skôr, než sa stihol zapísať tento riadok, natvrdo zapísaný LAST_UPDATE
-    # by prepísal poslednú novú menu. Dynamický riadok toto vylučuje úplne.
-    # index.html vyčlení tento riadok podľa kódu "LAST_UPDATE" v stĺpci A
+    # poslednou menou ($nextNewRow, ktorý cyklus vyššie počíta len z riadkov
+    # so skutočným kódom meny, takže ho staré LAST_UPDATE riadky neovplyvnia),
+    # nie na pevnom čísle riadku. Pri stabilnom počte mien preto tento zápis
+    # vždy dopadne na TEN ISTÝ riadok (prepíše sám seba), namiesto toho, aby
+    # sa pri každom behu posúval o riadok ďalej a za sebou nechával smetie.
+    # Predtým bol natvrdo na riadku 20 (s odstupom od vtedajších 12 mien) —
+    # keby sa ale niekedy pridalo dosť nových mien naraz, aby zoznam dosiahol
+    # riadok 20 skôr, než sa stihol zapísať tento riadok, natvrdo zapísaný
+    # LAST_UPDATE by prepísal poslednú novú menu. Dynamický riadok toto
+    # vylučuje úplne. index.html vyčlení tento riadok podľa kódu "LAST_UPDATE"
+    # v stĺpci A
     # (nezávisle od toho, na ktorom riadku presne je) a ukáže namiesto času
     # vlastného fetchu, nech "Aktualizované" na stránke ukazuje čas SKUTOČNEJ
     # zmeny kurzu, nie každé obnovenie stránky (tá si dáta ťahá každých 60 s,
