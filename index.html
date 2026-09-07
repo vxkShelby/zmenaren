@@ -1040,7 +1040,7 @@
       textSizeLabel: "Väčšie písmo",
       rateLabel: "Kurz:",
       feeLabel: "Poplatok:",
-      calcDisclaimer: "Orientačný výpočet — konečná suma sa potvrdí priamo pri výmene na pobočke.",
+      calcDisclaimer: "Orientačný výpočet, zaokrúhlený na 5 centov (bez 1- a 2-centových mincí) — konečná suma sa potvrdí priamo pri výmene na pobočke.",
       helperBuy: (amount, code) => `Toľko EUR dostanete za ${amount} ${code}.`,
       helperSell: (amount, code) => `Toľko EUR zaplatíte za ${amount} ${code}.`,
       whyUs: ["0 % poplatok", "Výhodnejšie ako banka", "Žiadne čakanie"],
@@ -1093,7 +1093,7 @@
       textSizeLabel: "Larger text",
       rateLabel: "Rate:",
       feeLabel: "Fee:",
-      calcDisclaimer: "Indicative calculation only — the final amount is confirmed in person at the counter.",
+      calcDisclaimer: "Indicative calculation, rounded to 5 cents (no 1c/2c coins) — the final amount is confirmed in person at the counter.",
       helperBuy: (amount, code) => `You'll receive this much EUR for ${amount} ${code}.`,
       helperSell: (amount, code) => `You'll pay this much EUR for ${amount} ${code}.`,
       whyUs: ["0% fee", "Better rate than a bank", "No waiting"],
@@ -1146,7 +1146,7 @@
       textSizeLabel: "Größere Schrift",
       rateLabel: "Kurs:",
       feeLabel: "Gebühr:",
-      calcDisclaimer: "Nur eine Orientierungsberechnung — der endgültige Betrag wird vor Ort an der Kasse bestätigt.",
+      calcDisclaimer: "Orientierungsberechnung, gerundet auf 5 Cent (ohne 1- und 2-Cent-Münzen) — der endgültige Betrag wird vor Ort an der Kasse bestätigt.",
       helperBuy: (amount, code) => `So viel EUR erhalten Sie für ${amount} ${code}.`,
       helperSell: (amount, code) => `So viel EUR zahlen Sie für ${amount} ${code}.`,
       whyUs: ["0 % Gebühr", "Günstiger als die Bank", "Kein Warten"],
@@ -1315,6 +1315,13 @@
     if (Number.isNaN(num)) return "—";
     // 3 desatinné miesta — rovnaká presnosť, akú exportuje Monetka.
     return num.toLocaleString("sk-SK", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  }
+
+  // Hotovostné zaokrúhľovanie — 1- a 2-centové mince sa v eurozóne bežne
+  // v hotovosti nepoužívajú, výsledná vyplácaná/platená suma sa preto
+  // zaokrúhľuje na najbližších 5 centov (napr. 12,32 € → 12,30 €).
+  function roundToCash(amount) {
+    return Math.round(amount / 0.05) * 0.05;
   }
 
   // Pre bunky s kurzom v tabuľke: 0 (Monetka takto označuje menu, ktorú
@@ -1498,7 +1505,7 @@
       helper.textContent = t.helperSell(formatNumber(amount), code);
       rateDetail.textContent = `1 EUR = ${formatNumber(rate.sell)} ${code}`;
     }
-    output.textContent = eur.toLocaleString("sk-SK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    output.textContent = roundToCash(eur).toLocaleString("sk-SK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   document.getElementById("calc-amount").addEventListener("input", updateCalculator);
