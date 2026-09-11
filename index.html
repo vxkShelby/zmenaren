@@ -1636,7 +1636,11 @@
       // hárok. Bez tohto obmedzenia by fetch po rokoch prevádzky sťahoval
       // stále väčší a väčší súbor pri každom 60-sekundovom obnovení stránky.
       const query = encodeURIComponent("select * order by A desc limit 200");
-      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.HISTORY_SHEET_NAME)}&tq=${query}`;
+      // "&_=" nemá pre samotný dopyt žiadny význam — jeho jediný účel je urobiť
+      // URL pri každom volaní inú, nech Google gviz odpoveď nevracia z vlastnej
+      // cache (bez toho vedela ostať "zaseknutá" na starých dátach aj hodiny,
+      // keďže URL bola inak vždy identická).
+      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.HISTORY_SHEET_NAME)}&tq=${query}&_=${Date.now()}`;
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
       const res = await fetch(url, { cache: "no-store", signal: controller.signal });
@@ -1676,7 +1680,11 @@
       if (latestRates.length) renderRates(latestRates, lastIsDemo);
     });
     try {
-      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}`;
+      // "&_=" je len cache-busting (viď rovnaký komentár pri fetchHistory
+      // vyššie) — bez neho Google gviz vedel na tejto vždy identickej URL
+      // servírovať starú odpoveď aj cez hodinu, kým sa naozaj zmenené kurzy
+      // reálne prejavili na stránke.
+      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}&_=${Date.now()}`;
       // Timeout, aby stránka pri zaseknutej mall WiFi nečakala na fetch donekonečna,
       // ale rýchlo prepla na záložné (demo) dáta.
       const controller = new AbortController();
