@@ -1697,15 +1697,6 @@
       const text = await res.text();
       const jsonText = text.substring(text.indexOf("(") + 1, text.lastIndexOf(")"));
       const data = JSON.parse(jsonText);
-      // DOČASNÝ DIAGNOSTICKÝ LOG — pomáha zistiť, prečo "Aktualizované" ostáva
-      // zaseknuté na starom čase, hoci Sheet aj kurzy sú preukázateľne
-      // aktuálne. Vypíše presne to, čo gviz reálne vrátil pre riadok
-      // LAST_UPDATE (surový objekt, nie len .v) — odstrániť, keď sa nájde
-      // príčina.
-      console.log("[diag] gviz raw response text:", text.slice(0, 300));
-      console.log("[diag] všetky riadky (raw):", JSON.stringify(data.table.rows));
-      const diagLastUpdateRow = data.table.rows.find(row => String(row.c[0]?.v ?? "").toUpperCase().startsWith("LAST_UPDATE"));
-      console.log("[diag] nájdený LAST_UPDATE riadok:", JSON.stringify(diagLastUpdateRow));
 
       // Očakávaný formát riadkov v hárku:
       // Mena | Nakupujeme | Predávame
@@ -1732,7 +1723,15 @@
         if (rawCode.toUpperCase().startsWith("LAST_UPDATE")) {
           const raw = rawCode.slice(rawCode.indexOf("|") + 1);
           const parsed = new Date(raw);
-          if (!Number.isNaN(parsed.getTime())) sourceTimestamp = parsed;
+          // Vyberá NAJNOVŠÍ (najväčší) čas spomedzi všetkých nájdených
+          // "LAST_UPDATE" riadkov, nie len ten posledný v poradí — v hárku
+          // sa vie nájsť aj zabudnutý starší riadok tohto typu (pozostatok
+          // z ladenia výpočtu voľného riadku), ktorý by inak stačilo mať v
+          // poradí ZA tým aktuálnym a nesprávne by prepísal správny (novší)
+          // čas tým starším.
+          if (!Number.isNaN(parsed.getTime()) && (!sourceTimestamp || parsed > sourceTimestamp)) {
+            sourceTimestamp = parsed;
+          }
           return;
         }
         const code = rawCode.toUpperCase();
