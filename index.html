@@ -1323,7 +1323,23 @@
   // v hotovosti nepoužívajú, výsledná vyplácaná/platená suma sa preto
   // zaokrúhľuje na najbližších 5 centov (napr. 12,32 € → 12,30 €).
   function roundToCash(amount) {
-    return Math.round(amount / 0.05) * 0.05;
+    return Math.round(Math.round(amount * 100) / 5) * 5 / 100;
+  }
+
+  // Google gviz vracia JSONP: "...setResponse({...});". Vyberie sa objekt
+  // medzi prvou "(" a poslednou ")" a overí sa, že je to naozaj odpoveď s
+  // tabuľkou — inak (napr. HTML stránka s chybou/prihlásením) vyhodí zrozumiteľnú chybu.
+  function parseGvizResponse(text) {
+    const start = text.indexOf("(");
+    const end = text.lastIndexOf(")");
+    if (start === -1 || end <= start) {
+      throw new Error("Neočakávaná odpoveď z Google Sheetu (nie JSONP).");
+    }
+    const data = JSON.parse(text.substring(start + 1, end));
+    if (!data || data.status === "error" || !data.table || !Array.isArray(data.table.rows)) {
+      throw new Error("Google Sheet nevrátil tabuľku: " + JSON.stringify(data && data.errors || data));
+    }
+    return data;
   }
 
   // Pre bunky s kurzom v tabuľke: 0 (Monetka takto označuje menu, ktorú
@@ -1649,11 +1665,11 @@
       clearTimeout(timeout);
       if (!res.ok) throw new Error(`História fetch zlyhal so stavom ${res.status}`);
       const text = await res.text();
-      const jsonText = text.substring(text.indexOf("(") + 1, text.lastIndexOf(")"));
-      const data = JSON.parse(jsonText);
+      const data = parseGvizResponse(text);
 
       const byCode = {};
-      (data.table.rows || []).forEach(row => {
+      data.table.rows.forEach(row => {
+        if (!row || !row.c) return;
         const date = String(row.c[0]?.v ?? "").trim();
         const code = String(row.c[1]?.v ?? "").trim().toUpperCase();
         if (!date || !code) return;
@@ -1695,8 +1711,7 @@
       clearTimeout(timeout);
       if (!res.ok) throw new Error(`Sheet fetch zlyhal so stavom ${res.status}`);
       const text = await res.text();
-      const jsonText = text.substring(text.indexOf("(") + 1, text.lastIndexOf(")"));
-      const data = JSON.parse(jsonText);
+      const data = parseGvizResponse(text);
 
       // Očakávaný formát riadkov v hárku:
       // Mena | Nakupujeme | Predávame
@@ -1710,6 +1725,7 @@
       const rates = [];
       let sourceTimestamp = null;
       data.table.rows.forEach(row => {
+        if (!row || !row.c) return;
         // .trim() — vlastník hárku môže omylom napísať kód meny malými
         // písmenami alebo s medzerou navyše ("czk "); bez normalizácie by sa
         // taký riadok tváril ako neznáma mena.

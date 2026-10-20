@@ -20,6 +20,11 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
     exit 1
 }
 
+# Poistka proti dvom súbežne bežiacim inštanciám watchera (napr. pri omylom
+# dvojitom spustení naplánovanej úlohy) — druhá inštancia hneď skončí.
+$script:InstanceMutex = New-Object System.Threading.Mutex($false, "Local\ZmenarenWatcher")
+if (-not $script:InstanceMutex.WaitOne(0)) { exit 0 }
+
 # TODO: doplniť po vytvorení Google Cloud service accountu (JSON kľúč) —
 # pozri README.md, časť "Google Cloud service account"
 $ServiceAccountKeyPath = "C:\zmenaren-watcher\service-account.json"
@@ -265,13 +270,13 @@ function Write-RatesToGoogleSheet {
     # donekonečna posúval o riadok ďalej a starý marker by navždy ostal ako
     # smetie v hárku — pri stabilnom počte mien má LAST_UPDATE vždy dopadnúť
     # na ten istý (a teda prepísaný, nie nový) riadok.
-    $currencyRowCount = ($existing | Where-Object { $_ -and $_[0] -match '^[A-Za-z]{3}$' }).Count
+    $currencyRowCount = @($existing | Where-Object { $_ -and $_[0] -match '^[A-Za-z]{3}$' }).Count
     $nextNewRow = $currencyRowCount + 2  # hárok má dáta od riadku 2 (riadok 1 = hlavička)
 
     foreach ($r in $Rates) {
         $rowIndex = -1
         for ($i = 0; $i -lt $existing.Count; $i++) {
-            if ($existing[$i][0] -eq $r.code) { $rowIndex = $i; break }
+            if ($existing[$i] -and $existing[$i].Count -gt 0 -and $existing[$i][0] -eq $r.code) { $rowIndex = $i; break }
         }
 
         if ($rowIndex -ge 0) {
@@ -325,7 +330,7 @@ function Write-RatesToGoogleSheet {
     $lastUpdateRow = $nextNewRow
     $lastUpdateRange = "$SheetName!A${lastUpdateRow}:B${lastUpdateRow}"
     $lastUpdateUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($lastUpdateRange))?valueInputOption=RAW"
-    $lastUpdateValue = "LAST_UPDATE|$($UpdateTimestampUtc.ToString("yyyy-MM-ddTHH:mm:ssZ"))"
+    $lastUpdateValue = "LAST_UPDATE|$($UpdateTimestampUtc.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss'Z'", [System.Globalization.CultureInfo]::InvariantCulture))"
     $lastUpdateBody = @{ values = @(, @($lastUpdateValue, "")) } | ConvertTo-Json -Depth 4
     Invoke-RestMethod -Uri $lastUpdateUrl -Headers $headers -Method Put -Body $lastUpdateBody -ContentType "application/json" | Out-Null
 
@@ -449,9 +454,9 @@ if ($SpreadsheetId) {
         $seedUrl = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/$([uri]::EscapeDataString($seedRange))?valueRenderOption=UNFORMATTED_VALUE"
         $seedRows = (Invoke-RestMethod -Uri $seedUrl -Headers $seedHeaders -Method Get).values
         if ($seedRows) {
-            $seedRates = $seedRows | Where-Object { $_[0] -match '^[A-Za-z]{3}$' } | ForEach-Object {
+            $seedRates = @($seedRows | Where-Object { $_ -and $_.Count -ge 3 -and $_[0] -match '^[A-Za-z]{3}$' } | ForEach-Object {
                 [PSCustomObject]@{ code = $_[0].ToUpper(); buy = [double]$_[1]; sell = [double]$_[2] }
-            }
+            })
             if ($seedRates.Count -gt 0) {
                 $lastRatesSnapshot = Get-RatesSnapshot -Rates $seedRates
                 Write-Log "Počiatočný stav kurzov načítaný zo Sheetu ($($seedRates.Count) mien)."
