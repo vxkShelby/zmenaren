@@ -263,15 +263,25 @@ function Write-RatesToGoogleSheet {
     if (-not $existing) { $existing = @() }
 
     $updates = @()
-    # Len riadky so skutočným kódom meny (presne 3 písmená) sa počítajú ako
-    # "obsadené" pri hľadaní voľného riadku pre novú menu — NIE starý riadok
-    # LAST_UPDATE|... (viď nižšie). Bez tohto filtra by sa pri každom zápise
-    # do počtu započítal aj marker z MINULÉHO behu, $nextNewRow by sa tak
-    # donekonečna posúval o riadok ďalej a starý marker by navždy ostal ako
-    # smetie v hárku — pri stabilnom počte mien má LAST_UPDATE vždy dopadnúť
-    # na ten istý (a teda prepísaný, nie nový) riadok.
-    $currencyRowCount = @($existing | Where-Object { $_ -and $_[0] -match '^[A-Za-z]{3}$' }).Count
-    $nextNewRow = $currencyRowCount + 2  # hárok má dáta od riadku 2 (riadok 1 = hlavička)
+    # Voľný riadok pre NOVÚ menu je hneď ZA POSLEDNÝM riadkom so skutočným
+    # kódom meny (presne 3 písmená) — nie na základe ich POČTU. Počet by
+    # tichmo predpokladal, že menové riadky sú súvislé od riadku 2; keby v
+    # hárku vznikla medzera (zmazaný/prázdny riadok, preklep s medzerou
+    # navyše uprostred zoznamu), počet by vyšiel nižší, než je skutočná
+    # posledná obsadená pozícia, a nová mena by sa zapísala PRES existujúcu
+    # (prepísala by ju alebo by s ňou kolidovala v tej istej dávke).
+    # Starý riadok LAST_UPDATE|... sa do tohto hľadania zámerne nepočíta —
+    # bez toho by sa pri každom zápise $nextNewRow posúval o riadok ďalej a
+    # starý marker by navždy ostal ako smetie v hárku; pri stabilnom
+    # usporiadaní mien má LAST_UPDATE vždy dopadnúť na ten istý (a teda
+    # prepísaný, nie nový) riadok.
+    $lastCurrencyRowIndex = -1
+    for ($i = 0; $i -lt $existing.Count; $i++) {
+        if ($existing[$i] -and $existing[$i].Count -gt 0 -and $existing[$i][0] -match '^[A-Za-z]{3}$') {
+            $lastCurrencyRowIndex = $i
+        }
+    }
+    $nextNewRow = $lastCurrencyRowIndex + 3  # index->riadok (+2) + 1 za posledný obsadený
 
     foreach ($r in $Rates) {
         $rowIndex = -1
@@ -471,8 +481,13 @@ while ($true) {
     try {
         if (Test-Path $TargetFile) {
             $currentWriteTime = (Get-Item $TargetFile).LastWriteTimeUtc
-            if ($null -eq $lastWriteTime -or $currentWriteTime -ne $lastWriteTime) {
-                $lastWriteTime = $currentWriteTime
+            if ($currentWriteTime -ne $lastWriteTime) {
+                # $lastWriteTime sa nastaví AŽ PO úspešnom spracovaní (pozri catch
+                # nižšie) — ak parsovanie alebo zápis do Sheetu zlyhá (výpadok
+                # WiFi, Monetka ešte drží súbor zamknutý, nečakané číslo v
+                # riadku...), tento istý currentWriteTime sa na ďalšom cykle
+                # skúsi znova, namiesto toho, aby sa natrvalo (až do ďalšej
+                # reálnej zmeny exportu) považoval za "už spracovaný".
                 Wait-ForFileToStopChanging -Path $TargetFile  # počkať, kým Monetka dopíše súbor
                 $parsed = Parse-MonetkaExport -FilePath $TargetFile
                 $rates = $parsed.Rates
@@ -490,11 +505,16 @@ while ($true) {
                 } else {
                     Write-Log "Súbor sa síce znova uložil, ale kurzy sú rovnaké ako predtým — Sheet sa nezapisuje."
                 }
+                $lastWriteTime = $currentWriteTime
             }
         } else {
             Write-Log "VAROVANIE: Súbor '$TargetFile' zatiaľ neexistuje."
         }
     } catch {
+        # $lastWriteTime sa zámerne NEnastavuje — nechávame ho na hodnote spred
+        # tohto pokusu (alebo $null pri úplne prvom behu), nech sa ten istý
+        # súbor skúsi spracovať znova na ďalšom cykle, namiesto toho, aby sa
+        # táto chyba "stratila" a stránka ostala navždy so starými kurzami.
         Write-Log "CHYBA pri spracovaní exportu: $_"
         Show-Notification -Title "Zmenáreň — chyba" -Message "Kurzy sa nepodarilo aktualizovať: $_" -Type Error
     }

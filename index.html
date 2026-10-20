@@ -1423,13 +1423,27 @@
   function renderRates(rates, isDemo, sourceTimestamp) {
     latestRates = rates;
     lastIsDemo = isDemo;
-    if (sourceTimestamp) { lastSourceTimestamp = sourceTimestamp; }
+    // Pri ukážkových dátach (zlyhaný fetch, alebo prázdny Sheet) sa
+    // lastSourceTimestamp vždy VYČISTÍ — inak by "Aktualizované" ukazovalo
+    // čas POSLEDNÝCH reálnych kurzov popri vymyslených ukážkových číslach,
+    // čo pôsobí presvedčivejšie (a teda zavádzajúcejšie), než má. Pri
+    // reálnych dátach sa aktualizuje len vtedy, keď prišla platná časová
+    // značka (pravidelné 60s obnovenie bez zmeny kurzu žiadnu neposiela).
+    if (isDemo) {
+      lastSourceTimestamp = null;
+    } else if (sourceTimestamp) {
+      lastSourceTimestamp = sourceTimestamp;
+    }
     const t = I18N[currentLang];
     const body = document.getElementById("rates-body");
     body.innerHTML = "";
     rates.forEach(r => {
       const tr = document.createElement("tr");
-      const weekAgo = getWeekAgoValue(r.code);
+      // Týždenná zmena sa pri ukážkových dátach nikdy nepočíta — latestHistory
+      // obsahuje SKUTOČNÉ historické kurzy, takže porovnanie s vymyslenými
+      // ukážkovými číslami by vedelo ukázať presvedčivo vyzerajúcu, ale úplne
+      // falošnú šípku a rozdiel (napr. ukážkové DKK oproti reálnej histórii).
+      const weekAgo = isDemo ? null : getWeekAgoValue(r.code);
       const weekBuy = weekAgo ? renderDelta(r.buy, weekAgo.buy) : '<span class="delta delta-flat">–</span>';
       const weekSell = weekAgo ? renderDelta(r.sell, weekAgo.sell) : '<span class="delta delta-flat">–</span>';
       tr.innerHTML = `
@@ -1662,9 +1676,13 @@
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
       const res = await fetch(url, { cache: "no-store", signal: controller.signal });
-      clearTimeout(timeout);
-      if (!res.ok) throw new Error(`História fetch zlyhal so stavom ${res.status}`);
+      if (!res.ok) { clearTimeout(timeout); throw new Error(`História fetch zlyhal so stavom ${res.status}`); }
+      // Timeout sa ruší až PO prečítaní tela odpovede — hlavičky môžu dorazit
+      // rýchlo aj pri zaseknutej mall WiFi, kým samotné telo sa sťahuje ešte
+      // dlho (alebo vôbec); bez tohto by 8s limit pokrýval len prvú časť
+      // požiadavky a čítanie tela by vedelo visieť bez časového obmedzenia.
       const text = await res.text();
+      clearTimeout(timeout);
       const data = parseGvizResponse(text);
 
       const byCode = {};
@@ -1708,9 +1726,11 @@
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
       const res = await fetch(url, { cache: "no-store", signal: controller.signal });
-      clearTimeout(timeout);
-      if (!res.ok) throw new Error(`Sheet fetch zlyhal so stavom ${res.status}`);
+      if (!res.ok) { clearTimeout(timeout); throw new Error(`Sheet fetch zlyhal so stavom ${res.status}`); }
+      // Timeout sa ruší až PO prečítaní tela odpovede — pozri rovnaký
+      // komentár vo fetchHistory() vyššie.
       const text = await res.text();
+      clearTimeout(timeout);
       const data = parseGvizResponse(text);
 
       // Očakávaný formát riadkov v hárku:
